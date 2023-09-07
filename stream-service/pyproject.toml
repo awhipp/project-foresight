@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "stream-service"
+version = "0.1.0"
+description = "Service which streams data into the data store"
+authors = ["Alexander Whipp <alexruns4@gmail.com>"]
+readme = "README.md"
+packages = []
+
+[tool.poetry.dependencies]
+python = "^3.11"
+oandapyV20 = "^0.7.2"
+requests = "^2.31.0"
+python-dotenv = "^1.0.0"
+six = "^1.16.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
