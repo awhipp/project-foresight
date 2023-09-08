@@ -1,0 +1,32 @@
+version: '3'
+services:
+  localstack:
+    image: localstack/localstack
+    container_name: localstack
+    environment:
+      - SERVICES=sqs,s3
+      - DEBUG=1
+    ports:
+      - "4566:4566"
+      - "4571:4571"
+    networks:
+      - localstack_network
+
+  timescaledb:
+    image: timescale/timescaledb:latest-pg14
+    container_name: timescaledb
+    environment:
+      POSTGRES_DB: project_foresight
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - timescaledb_network
+
+networks:
+  localstack_network:
+    driver: bridge
+
+  timescaledb_network:
+    driver: bridge
