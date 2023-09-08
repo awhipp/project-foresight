@@ -10,7 +10,7 @@ services:
       - "4566:4566"
       - "4571:4571"
     networks:
-      - localstack_network
+      - foresight_network
 
   timescaledb:
     image: timescale/timescaledb:latest-pg14
@@ -22,16 +22,14 @@ services:
     ports:
       - "5432:5432"
     networks:
-      - timescaledb_network
+      - foresight_network
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
 
 networks:
-  localstack_network:
+  foresight_network:
     driver: bridge
 
-  timescaledb_network:
-    driver: bridge
 
 volumes:
   timescaledb_data:

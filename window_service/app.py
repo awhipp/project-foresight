@@ -87,8 +87,8 @@ if __name__ == "__main__":
             # Calculate averages for each subscription
             for subscription in subscriptions:
                 sub_average = calculate_averages(
-                    df=data, 
-                    instrument=subscription['instrument'], 
+                    df=data,
+                    instrument=subscription['instrument'],
                     timescale=subscription['timescale']
                 )
 
