@@ -58,3 +58,19 @@ The following sets up
 ```bash
 docker-compose up -d
 ```
+
+### Deploy Services
+
+Deploy the following services in the order listed below, after docker is running.
+
+```bash
+# Install dependencies
+poetry install
+
+# Activate environment
+poetry shell
+
+# Deploy services
+python stream_service/app.py
+python window_service/app.py
+```
