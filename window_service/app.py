@@ -4,6 +4,8 @@ from pathlib import Path
 import time
 import pandas as pd
 
+from boto3_type_annotations.sqs import Client
+
 # Setup logging and log timestamp prepend
 import logging
 logging.basicConfig(
@@ -16,6 +18,7 @@ logger = logging.getLogger(__name__)
 # Determine fixed path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from utils.database import TimeScaleService
+from utils.aws import get_client
 
 def fetch_all_data():
     '''
@@ -70,6 +73,7 @@ if __name__ == "__main__":
         params=('dummy', 'EUR_USD', '1T')
     )
 
+    sqsClient: Client = get_client('sqs')
 
     while True:
         try:
@@ -92,7 +96,15 @@ if __name__ == "__main__":
                     logger.info(f"Total number of minutes for {subscription['instrument']}: {len(sub_average)}")
                 else:
                     logger.info(f'Publishing to {subscription["queue_url"]}')
+                    sqsClient.send_message(
+                        QueueUrl=subscription['queue_url'],
+                        MessageBody=sub_average.to_json(orient='records')
+                    )
         except Exception as sending_exception:
             logger.error(f"Error: {sending_exception}")
 
-        time.sleep(60)
+
+        # Run at the start of the next minutes
+        til_next_minute = round(60 - time.time() % 60, 2)
+        logger.info(f"Sleeping for {til_next_minute} seconds")
+        time.sleep(til_next_minute)

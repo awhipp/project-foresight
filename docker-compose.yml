@@ -23,6 +23,8 @@ services:
       - "5432:5432"
     networks:
       - timescaledb_network
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
 
 networks:
   localstack_network:
@@ -30,3 +32,6 @@ networks:
 
   timescaledb_network:
     driver: bridge
+
+volumes:
+  timescaledb_data:
