@@ -6,7 +6,7 @@ import psycopg2
 import psycopg2.extras
 
 import dotenv
-dotenv.load_dotenv(".env")
+dotenv.load_dotenv("../.env")
 
 import logging
 logging.basicConfig(

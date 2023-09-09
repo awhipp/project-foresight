@@ -24,6 +24,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 class Indicator():
+    '''Indicator Superclass'''
     component_name: str
     queue_url: str
     
@@ -78,6 +79,10 @@ class Indicator():
             return df
         return None
         
+    def value(self, data: pd.DataFrame) -> float:
+        '''Calculate the value of the indicator.'''
+        raise NotImplementedError("Subclasses must implement this method.")
+    
     def do_work(self):
         '''Do work.'''
         raise NotImplementedError("Subclasses must implement this method.")

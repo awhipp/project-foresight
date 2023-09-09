@@ -4,6 +4,12 @@
 
 Overall, this architecture facilitates the continuous flow of data from ticket sources to the user interface, with various microservices handling data ingestion, aggregation, calculations, storage, and presentation. It provides a scalable and maintainable solution for processing and visualizing ticket-related indicators.
 
+## End State Architecture
+
+This is the end-goal and a work in progres (subject to change).
+
+![Architecture Diagram](./diagram/end_state.png)
+
 ### Ticket Data Fetch Service (Microservice 1)
 
 * Responsibility: This microservice is responsible for fetching ticket data from various sources and writing it to a time series database, specifically Timescale DB.

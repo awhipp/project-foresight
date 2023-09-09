@@ -20,40 +20,38 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from utils.database import TimeScaleService
 from utils.aws import get_client
 
-def fetch_all_data():
+def fetch_data(is_bid: bool = True, instrument: str = 'EUR_USD', timescale: str = 'M'):
     '''
-    Fetch all data from the database.
+    Fetch all data from the database and return a DataFrame.
+
+    Parameters:
+        is_bid (bool): Whether to fetch bid or ask data
+        instrument (str): The instrument to fetch
+        timescale (str): The timescale to fetch (M = minutes, H = hours, D = days)
+    
+    Returns:
+        pd.DataFrame: The data from the database
     '''
     try:
-        # Execute the query to fetch all data
-        tick_data = TimeScaleService().execute(query="""
-            SELECT instrument, time, bid, ask
-            FROM forex_data
-        """)
+        # Fetch all data from the database based on the parameters
+        ask_or_bid = 'bid' if is_bid else 'ask'
+        truncation = 'minute' if timescale == 'M' else 'hour' if timescale == 'H' else 'day'
+        tick_data = TimeScaleService().execute(
+            query=f"""
+                SELECT TO_CHAR(date_trunc('{truncation}', time), 'YYYY-MM-DD HH24:MI:SS') as time,
+                {ask_or_bid} AS price
+                FROM forex_data
+                WHERE instrument = '{instrument}'
+                GROUP BY time, {ask_or_bid}
+                ORDER BY time ASC
+            """
+        )
 
-        return pd.DataFrame(tick_data)
+        df = pd.DataFrame(tick_data)
+
+        return df.groupby('time')['price'].mean().reset_index() # Calculate the average price for each minute
     except Exception as fetch_exception:
         logger.error(f"Error: {fetch_exception}")
-
-def calculate_averages(df: pd.DataFrame, instrument: str, timescale: str):
-    '''
-    Calculate averages from the data.
-    '''
-    if not df.empty:
-        # Filter the data by instrument and remove it
-        df = df[df['instrument'] == instrument]
-        df.drop(columns=['instrument'], inplace=True)
-
-        # Resample the data to calculate determined averages
-        df['time'] = pd.to_datetime(df['time'])
-        df.set_index('time', inplace=True)
-        averages = df.resample(timescale).mean()
-
-        # Add instrument column back in
-        averages['instrument'] = instrument
-        return averages
-
-    return None
 
 if __name__ == "__main__":
     # Execute SQL queries here
@@ -70,35 +68,32 @@ if __name__ == "__main__":
     TimeScaleService().execute(
         query="""INSERT INTO subscription_feeds (queue_url, instrument, timescale)
         VALUES (%s, %s, %s)""",
-        params=('dummy', 'EUR_USD', '1T')
+        params=('dummy', 'EUR_USD', 'M')
     )
 
     sqsClient: Client = get_client('sqs')
 
     while True:
         try:
-            # Fetch all data from the database
-            data = fetch_all_data()
-
             subscriptions = TimeScaleService().execute(
                 query="""SELECT queue_url, instrument, timescale FROM subscription_feeds"""
             )
 
             # Calculate averages for each subscription
             for subscription in subscriptions:
-                sub_average = calculate_averages(
-                    df=data,
+                data = fetch_data(
+                    is_bid=True,
                     instrument=subscription['instrument'],
                     timescale=subscription['timescale']
                 )
 
                 if subscription['queue_url'] == 'dummy':
-                    logger.info(f"Total number of minutes for {subscription['instrument']}: {len(sub_average)}")
+                    logger.info(f"Total number of minutes (grouped) for {subscription['instrument']}: {len(data)}")
                 else:
                     logger.info(f'Publishing to {subscription["queue_url"]}')
                     sqsClient.send_message(
                         QueueUrl=subscription['queue_url'],
-                        MessageBody=sub_average.to_json(orient='records')
+                        MessageBody=data.to_json(orient='records')
                     )
         except Exception as sending_exception:
             logger.error(f"Error: {sending_exception}")
