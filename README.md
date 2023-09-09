@@ -22,13 +22,13 @@ This is the end-goal and a work in progres (subject to change).
 * Functionality: It retrieves data from the time series database at scheduled intervals, applies aggregation operations (e.g., sum, average) over specified time windows, and then sends the aggregated results to other services via Amazon Simple Queue Service (SQS).
 * Technology Stack: Python, Timescale DB Connector, Scheduler, Amazon SQS Connector.
 
-### Indicator Calculation Services (Microservices 3 - N)
+### Indicator Calculation Services (Microservices 3 - N) -- WIP (only one indicator service implemented)
 
 * Responsibility: These microservices are responsible for consuming aggregated data from the SQS queue and performing more complex calculations to generate indicators then storing them in a PostgreSQL database.
 * Functionality: Each service subscribes to the SQS queue and processes incoming aggregated data. Depending on the specific calculation logic, they perform statistical or analytical operations on the data to create meaningful indicators. The resulting indicators are then stored in a PostgreSQL database.
 * Technology Stack: Python, Amazon SQS Connector, PostgreSQL, Database Connector, Indicator Calculation Logic.
 
-### UI Service (Microservice N+1)
+### UI Service (Microservice N+1) -- WIP
 
 * Responsibility: This microservice serves as the user interface for displaying the latest indicators to end users.
 * Functionality: It retrieves the latest indicators from the PostgreSQL database and presents them in a user-friendly format through a web or application interface. Users can interact with the UI to view and analyze the indicator data.
@@ -79,4 +79,5 @@ poetry shell
 # Deploy services
 python stream_service/app.py
 python window_service/app.py
+python indicator_service/moving_average_indicator.py
 ```
