@@ -4,6 +4,8 @@ from pathlib import Path
 
 import io
 import time
+import json
+import datetime
 
 # Determine fixed path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -87,11 +89,57 @@ class Indicator():
         '''Do work.'''
         raise NotImplementedError("Subclasses must implement this method.")
     
+    def create_indicator_table(self):
+        '''Create a table in the data store.'''
+        TimeScaleService().create_table(
+            query="""
+                CREATE TABLE IF NOT EXISTS indicator_results (
+                component_name VARCHAR(255) NOT NULL,
+                time TIMESTAMPTZ NOT NULL,
+                value TEXT NOT NULL,
+                PRIMARY KEY (component_name, time)
+            )""",
+            hyper_table_name='indicator_results',
+            hyper_table_column='time'
+        )
+
+    def save_indicator_results(self, value: str):
+        '''Save the results of the indicator.'''
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        TimeScaleService().execute(
+            query=f"""
+                INSERT INTO indicator_results (component_name, time, value)
+                VALUES ('{self.component_name}', '{timestamp}', '{value}')
+            """
+        )
+        logger.info(f"Saved indicator results for {self.component_name}")
+    
     def schedule_work(self):
         '''Scheduled for every minute.'''
+        self.create_indicator_table()
         while True:
-            self.do_work()
+            result = self.do_work()
 
-            logger.info(f"Sleeping for {30} seconds")
+            if isinstance(result, str):
+                self.save_indicator_results(value=result)
+            elif isinstance(result, dict):
+                self.save_indicator_results(value=json.dumps(result))
+            elif isinstance(result, pd.DataFrame):
+                self.save_indicator_results(
+                    value=json.dumps(
+                        result.to_json(orient='records')
+                    )
+                )
+            elif isinstance(result, int) or isinstance(result, float):
+                self.save_indicator_results(value=str(result))
+            elif isinstance(result, list):
+                self.save_indicator_results(value=json.dumps(result))
+            elif result is None:
+                pass
+            else:
+                raise Exception("Invalid type for indicator result.")
+            
+
+            logger.info("Sleeping for 30 seconds")
             time.sleep(30)
         

@@ -4,7 +4,13 @@ from pathlib import Path
 import time
 import pandas as pd
 
+# Determine fixed path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 from boto3_type_annotations.sqs import Client
+
+from utils.database import TimeScaleService
+from utils.aws import get_client
 
 # Setup logging and log timestamp prepend
 import logging
@@ -14,11 +20,6 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 logger = logging.getLogger(__name__)
-
-# Determine fixed path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from utils.database import TimeScaleService
-from utils.aws import get_client
 
 def fetch_data(is_bid: bool = True, instrument: str = 'EUR_USD', timescale: str = 'M'):
     '''

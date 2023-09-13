@@ -1,7 +1,6 @@
 from indicator import Indicator
 
 import pandas as pd
-import datetime
 
 # Setup logging and log timestamp prepend
 import logging
@@ -26,7 +25,7 @@ class MovingAverageIndicator(Indicator):
             timescale=timescale
         )
 
-    def value(self, data: pd.DataFrame) -> float:
+    def value(self, data: pd.DataFrame) -> dict:
         '''Calculate how bullish or bearish something is based on 10-ma, 20-ma, 50-ma.'''
         # Calculate the moving averages
         data = data[data['price'].notnull()]
@@ -38,26 +37,39 @@ class MovingAverageIndicator(Indicator):
 
         # Calculate the value
         value = 0 # Neutral
-        if ma_10 > ma_20 > ma_30 > ma_40 > ma_50:
-            value = 1 # Bullish
-        elif ma_10 < ma_20 < ma_30 < ma_40 < ma_50:
-            value = -1 # Bearish
-        else:
-            value = 0 # Neutral
-        return value
-        
 
-    def do_work(self):
+        if ma_10 > ma_20:
+            value += 0.25
+        else:
+            value -= 0.25
+        if ma_20 > ma_30:
+            value += 0.25
+        else:
+            value -= 0.25
+        if ma_30 > ma_40:
+            value += 0.25
+        else:
+            value -= 0.25
+        if ma_40 > ma_50:
+            value += 0.25
+        else:
+            value -= 0.25
+        return {
+            'ma_10': ma_10,
+            'ma_20': ma_20,
+            'ma_30': ma_30,
+            'ma_40': ma_40,
+            'ma_50': ma_50,
+            'value': value
+        }
+
+    def do_work(self) -> dict:
         '''Calculates bullishness or bearishness based on moving averages.'''
         data = self.pull_from_queue()
         if data is None:
             return
         
-        results = {
-            "time": data['time'].max(),
-            "latest_price": data['price'].iloc[0],
-            "value": self.value(data)
-        }
+        results = self.value(data)
 
         logger.info(results)
         return results
