@@ -81,7 +81,7 @@ class Indicator():
             return df
         return None
         
-    def value(self, data: pd.DataFrame) -> float:
+    def value(self, data: pd.DataFrame) -> dict:
         '''Calculate the value of the indicator.'''
         raise NotImplementedError("Subclasses must implement this method.")
     

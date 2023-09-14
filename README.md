@@ -74,6 +74,7 @@ poetry shell
 python stream_service/app.py
 python window_service/app.py
 python indicator_service/moving_average_indicator.py
+python interface_service/app.py
 ```
 
 ## End State Architecture

@@ -25,11 +25,16 @@ class InstrumentPricingIndicator(Indicator):
             timescale=timescale
         )
 
-    def value(self, data: pd.DataFrame) -> pd.DataFrame:
+    def value(self, data: pd.DataFrame) -> dict:
         ''''Calculate the all price data for the instrument as a list of json objects'''
-        return data[data['price'].notnull()]
+        # Remove nulls
+        data = data[data['price'].notnull()]
+        # Round price to 5 decimal places max
+        data['price'] = data['price'].round(5)
+        # Convert to json
+        return data.to_dict('records')
 
-    def do_work(self) -> pd.DataFrame:
+    def do_work(self) -> dict:
         '''Calculates all price data for the instrument'''
         data = self.pull_from_queue()
         if data is None:

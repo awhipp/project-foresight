@@ -55,11 +55,11 @@ class MovingAverageIndicator(Indicator):
         else:
             value -= 0.25
         return {
-            'ma_10': ma_10,
-            'ma_20': ma_20,
-            'ma_30': ma_30,
-            'ma_40': ma_40,
-            'ma_50': ma_50,
+            '10-minute': round(ma_10, 5),
+            '20-minute': round(ma_20, 5),
+            '30-minute': round(ma_30, 5),
+            '40-minute': round(ma_40, 5),
+            '50-minute': round(ma_50, 5),
             'value': value
         }
 

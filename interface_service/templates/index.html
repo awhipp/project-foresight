@@ -1,0 +1,111 @@
+<!-- table.html -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Table Display</title>
+</head>
+<body>
+</body>
+
+<!-- JQuery-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.27.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>
+
+<script>
+    const handlers = {
+        /** Takes instrument time and pricing and creates line chart **/
+        "instrument_pricing": (data) => {
+            $('body').append('<canvas id="lineChart"></canvas>');
+            // Only last N minutes
+            data = data.slice(-50);
+
+            // Extract time and price arrays from JSON data
+            var times = data.map(function(item) {
+                return new Date(item.time);
+            });
+            var prices = data.map(function(item) {
+                return item.price;
+            });
+            
+            // Get the canvas element and create a line chart
+            var ctx = document.getElementById('lineChart').getContext('2d');
+            var chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: times,
+                    datasets: [{
+                        label: 'Price',
+                        data: prices,
+                        borderColor: 'blue',
+                        backgroundColor: 'rgba(0, 0, 255, 0.2)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'hour',
+                                displayFormats: {
+                                    hour: 'HH:mm'
+                                },
+                                parser: 'YYYY-MM-DD HH:mm:ss',
+                                tooltipFormat: 'YYYY-MM-DD HH:mm:ss'
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            position: 'left'
+                        }
+                    }
+                }
+            });
+            
+            
+        },
+        /** Table of moving averages **/
+        "moving_average": (data) => {
+            // Create the table header
+            var table = "<table><tr><th>Time</th><th>Price</th></tr>";
+                // Loop through the data and create a table row for each
+                for (key in data) {
+                    table += "<tr><td>" + key + "</td><td>" + data[key] + "</td></tr>";
+                }
+                // Close the table
+                table += "</table>";
+                // Append the table to the body
+                $("body").append(table);
+            }
+        }
+    </script>
+    <script>
+        // Get the table data from the server
+        $.ajax({
+            url: "/latest",
+            type: "GET",
+            dataType: "json",
+            success: function(data) {
+                for (indicator in data) {
+                    // Call the relevant handler for the indicator
+                    if (indicator in handlers)
+                    handlers[indicator](data[indicator]);
+                    else
+                    console.log("No handler for " + indicator);
+                }
+
+                // TODO remove this and add refresh to each component
+                setTimeout(function() {
+                    window.location.reload(1);
+                }, 10000);
+            }
+        });
+    </script>
+    
+    </html>
+    
