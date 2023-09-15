@@ -87,7 +87,9 @@ if __name__ == '__main__':
     )
     
     # Open a stream to the OANDA API and send the data to the data store.
-    open_stream()
-
-    # Close the database connection when done.
-    TimeScaleService().close()
+    while True:
+        try:
+            open_stream()
+        except Exception as e:
+            logger.error(e)
+            logger.info('Restarting stream...')

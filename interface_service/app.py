@@ -29,14 +29,15 @@ def get_latest() -> list[dict]:
     )
 
 @app.route('/')
-def display_table():
-    data = get_latest()
-    results = {}
-    for row in data:
-        results[row['component_name']] = json.loads(row['value'])
-    print(results)
+def home():
     return render_template(
         'index.html'
+    )
+
+@app.route('/sma')
+def sma():
+    return render_template(
+        'sma.html'
     )
 
 @app.route('/latest', methods=['GET'])

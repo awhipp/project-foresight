@@ -2,7 +2,6 @@
 import sys
 from pathlib import Path
 
-import io
 import time
 import json
 import datetime
@@ -29,13 +28,16 @@ class Indicator():
     '''Indicator Superclass'''
     component_name: str
     queue_url: str
+    order_type: str # bid, ask, mid, or both
+    pricing: dict = {}
     
-    def __init__(self, component_name: str, instrument: str, timescale: str):
+    def __init__(self, component_name: str, instrument: str, timescale: str, order_type: str = 'mid'):
         if type(self) == Indicator:
             raise Exception("<Indicator> must be subclassed.")
         self.component_name = component_name
         self.queue_url = self.create_queue()
-        self.add_subscription_record(instrument=instrument, timescale=timescale)
+        self.order_type = order_type
+        self.add_subscription_record(instrument=instrument, timescale=timescale, order_type=order_type)
 
     def create_queue(self) -> str:
         '''Create a queue.'''
@@ -45,18 +47,18 @@ class Indicator():
         logger.info(f"Created queue: {self.component_name}_indicator_queue")
         return response['QueueUrl']
 
-    def add_subscription_record(self, instrument: str, timescale: str):
+    def add_subscription_record(self, instrument: str, timescale: str, order_type: str):
         '''Add a subscription record.'''
         TimeScaleService().execute(f"DELETE FROM subscription_feeds WHERE queue_url = '{self.queue_url}'")
         TimeScaleService().execute(
             query=f"""
-                INSERT INTO subscription_feeds (queue_url, instrument, timescale)
-                VALUES ('{self.queue_url}', '{instrument}', '{timescale}')
+                INSERT INTO subscription_feeds (queue_url, instrument, timescale, order_type)
+                VALUES ('{self.queue_url}', '{instrument}', '{timescale}', '{order_type}')
             """
         )
         logger.info(f"Added subscription record for {self.component_name}")
 
-    def pull_from_queue(self) -> pd.DataFrame:
+    def pull_from_queue(self):
         '''Pulls from Queue and returns a DataFrame.'''
         sqsClient: Client = get_client('sqs')
         logger.info(f"Counting messages in queue: {self.queue_url}")
@@ -77,16 +79,10 @@ class Indicator():
                 QueueUrl=self.queue_url,
                 ReceiptHandle=message['ReceiptHandle']
             )
-            df = pd.read_json(io.StringIO(message['Body']))
-            return df
-        return None
-        
-    def value(self, data: pd.DataFrame) -> dict:
+            self.pricing = json.loads(message['Body'])
+
+    def do_work(self) -> dict:
         '''Calculate the value of the indicator.'''
-        raise NotImplementedError("Subclasses must implement this method.")
-    
-    def do_work(self):
-        '''Do work.'''
         raise NotImplementedError("Subclasses must implement this method.")
     
     def create_indicator_table(self):
@@ -113,33 +109,31 @@ class Indicator():
             """
         )
         logger.info(f"Saved indicator results for {self.component_name}")
+
+    def format_pricing_data(self) -> dict:
+        ''''Calculate the all price data for the instrument as a list of json objects'''
+
+        data = pd.DataFrame(self.pricing)
+
+        # Remove nulls
+        data = data[data['price'].notnull()]
+
+        # Round price to 6 decimal places max
+        data['price'] = data['price'].round(6)
+
+        self.pricing = data.to_dict('records')
     
     def schedule_work(self):
         '''Scheduled for every minute.'''
         self.create_indicator_table()
         while True:
-            result = self.do_work()
+            self.pull_from_queue()
 
-            if isinstance(result, str):
-                self.save_indicator_results(value=result)
-            elif isinstance(result, dict):
-                self.save_indicator_results(value=json.dumps(result))
-            elif isinstance(result, pd.DataFrame):
-                self.save_indicator_results(
-                    value=json.dumps(
-                        result.to_json(orient='records')
-                    )
-                )
-            elif isinstance(result, int) or isinstance(result, float):
-                self.save_indicator_results(value=str(result))
-            elif isinstance(result, list):
-                self.save_indicator_results(value=json.dumps(result))
-            elif result is None:
-                pass
-            else:
-                raise Exception("Invalid type for indicator result.")
-            
+            if len(self.pricing) > 0:
+                self.format_pricing_data()
 
-            logger.info("Sleeping for 30 seconds")
-            time.sleep(30)
-        
+                result = self.do_work()
+
+                self.save_indicator_results(value=json.dumps(result))
+
+            time.sleep(5)
