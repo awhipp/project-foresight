@@ -82,3 +82,18 @@ python interface_service/app.py
 This is the end-goal and a work in progres (subject to change).
 
 ![Architecture Diagram](./diagram/end_state.png)
+
+## Progress Shots
+
+### Dashboard 
+
+Showing all indicators in realtime and their stats + bullish or bearish
+
+![home](https://github.com/awhipp/project-foresight/assets/6343174/cff3a732-c2b0-4268-978f-46c100d29aa6)
+
+### Simple Moving Average
+
+Updates in realtime and refreshes as new data comes in
+
+![sma](https://github.com/awhipp/project-foresight/assets/6343174/8a9017db-3ff4-450a-aee7-78c4f54617d7)
+
