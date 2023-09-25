@@ -27,34 +27,61 @@ def open_stream():
     '''
     account_id = os.getenv('OANDA_API_ACCOUNT_ID')
     api_token = os.getenv('OANDA_API_TOKEN')
+    random_walk = os.getenv('APP_RANDOM_WALK', 'False') == 'True'
 
-    url = f'https://stream-fxtrade.oanda.com/v3/accounts/{account_id}/pricing/stream?instruments=EUR_USD'
-    head = {
-        'Content-type':"application/json",
-        'Accept-Datetime-Format':"RFC3339",
-        'Authorization':f"Bearer {api_token}"
-    }
+    if random_walk:
+        from random import random
+        from datetime import datetime
+        from time import sleep
 
-    resp = requests.get(url, headers=head, stream=True, timeout=30).iter_lines()
-    for line in resp:
-        if line:
-            decoded_line = line.decode('utf-8')
-            obj = json.loads(decoded_line)
-            if obj['type'] == 'PRICE' and obj['tradeable']:
-                record = {
-                    'instrument': obj['instrument'],
-                    'time': obj['time'],
-                    'bid': float(obj['bids'][0]['price']),
-                    'ask': float(obj['asks'][0]['price'])
-                }
-                
-                TimeScaleService().execute(
-                    query="""INSERT INTO forex_data (instrument, time, bid, ask)
-                    VALUES (%s, %s, %s, %s)""",
-                    params=(record['instrument'], record['time'], record['bid'], record['ask'])
-                )
+        initial_price = 1.0
 
-                logger.info(record)
+        while True:
+            initial_price = initial_price * (1.0 + (random() - 0.5) * 0.1)
+            record = {
+                'instrument': 'EUR_USD',
+                'time': datetime.now().isoformat(),
+                'bid': round(initial_price, 5),
+                'ask': round(initial_price + 0.0001, 5)
+            }
+            
+            TimeScaleService().execute(
+                query="""INSERT INTO forex_data (instrument, time, bid, ask)
+                VALUES (%s, %s, %s, %s)""",
+                params=(record['instrument'], record['time'], record['bid'], record['ask'])
+            )
+
+            logger.info(record)
+
+            sleep(5)
+
+    else:
+        url = f'https://stream-fxtrade.oanda.com/v3/accounts/{account_id}/pricing/stream?instruments=EUR_USD'
+        head = {
+            'Content-type':"application/json",
+            'Accept-Datetime-Format':"RFC3339",
+            'Authorization':f"Bearer {api_token}"
+        }
+        resp = requests.get(url, headers=head, stream=True, timeout=30).iter_lines()
+        for line in resp:
+            if line:
+                decoded_line = line.decode('utf-8')
+                obj = json.loads(decoded_line)
+                if obj['type'] == 'PRICE' and obj['tradeable']:
+                    record = {
+                        'instrument': obj['instrument'],
+                        'time': obj['time'],
+                        'bid': float(obj['bids'][0]['price']),
+                        'ask': float(obj['asks'][0]['price'])
+                    }
+                    
+                    TimeScaleService().execute(
+                        query="""INSERT INTO forex_data (instrument, time, bid, ask)
+                        VALUES (%s, %s, %s, %s)""",
+                        params=(record['instrument'], record['time'], record['bid'], record['ask'])
+                    )
+
+                    logger.info(record)
 
 def create_table():
     '''Create a table in the data store.'''
