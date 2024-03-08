@@ -1,6 +1,11 @@
 import logging
 
-def generate_logger(name: str, log_level: str = "INFO", formatter_str: str = "%(asctime)s %(levelname)-8s %(message)s") -> logging.Logger:
+
+def generate_logger(
+    name: str,
+    log_level: str = "INFO",
+    formatter_str: str = "%(asctime)s %(levelname)-8s %(message)s",
+) -> logging.Logger:
     """Generate a logger with the given name and log level.
 
     Args:
