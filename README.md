@@ -1,4 +1,4 @@
-# project-foresight
+# Project Foresight
 
 ## Description
 
