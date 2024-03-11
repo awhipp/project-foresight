@@ -1,4 +1,5 @@
 """Streaming service for getting FOREX data to a data store."""
+
 import json
 import os
 import traceback

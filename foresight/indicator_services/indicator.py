@@ -1,15 +1,11 @@
 """Indicator Superclass"""
+
 import datetime
 import json
-import sys
-import time
-from pathlib import Path
 
-
-# Determine fixed path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
 # Setup logging and log timestamp prepend
 import logging
+import time
 
 import pandas as pd
 from boto3_type_annotations.sqs import Client
@@ -40,13 +36,15 @@ class Indicator:
         timescale: str,
         order_type: str = "mid",
     ):
-        if type(self) == Indicator:
+        if type(self) is Indicator:
             raise Exception("<Indicator> must be subclassed.")
         self.component_name = component_name
         self.queue_url = self.create_queue()
         self.order_type = order_type
         self.add_subscription_record(
-            instrument=instrument, timescale=timescale, order_type=order_type
+            instrument=instrument,
+            timescale=timescale,
+            order_type=order_type,
         )
 
     def create_queue(self) -> str:
@@ -60,13 +58,13 @@ class Indicator:
     def add_subscription_record(self, instrument: str, timescale: str, order_type: str):
         """Add a subscription record."""
         TimeScaleService().execute(
-            f"DELETE FROM subscription_feeds WHERE queue_url = '{self.queue_url}'"
+            f"DELETE FROM subscription_feeds WHERE queue_url = '{self.queue_url}'",
         )
         TimeScaleService().execute(
             query=f"""
                 INSERT INTO subscription_feeds (queue_url, instrument, timescale, order_type)
                 VALUES ('{self.queue_url}', '{instrument}', '{timescale}', '{order_type}')
-            """
+            """,
         )
         logger.info(f"Added subscription record for {self.component_name}")
 
@@ -75,20 +73,23 @@ class Indicator:
         sqsClient: Client = get_client("sqs")
         logger.info(f"Counting messages in queue: {self.queue_url}")
         response = sqsClient.get_queue_attributes(
-            QueueUrl=self.queue_url, AttributeNames=["ApproximateNumberOfMessages"]
+            QueueUrl=self.queue_url,
+            AttributeNames=["ApproximateNumberOfMessages"],
         )
         logger.info(
-            f"Messages in queue: {response['Attributes']['ApproximateNumberOfMessages']}"
+            f"Messages in queue: {response['Attributes']['ApproximateNumberOfMessages']}",
         )
 
         logger.info(f"Pulling from queue: {self.queue_url}")
         response = sqsClient.receive_message(
-            QueueUrl=self.queue_url, MaxNumberOfMessages=1
+            QueueUrl=self.queue_url,
+            MaxNumberOfMessages=1,
         )
         if "Messages" in response:
             message = response["Messages"][0]
             sqsClient.delete_message(
-                QueueUrl=self.queue_url, ReceiptHandle=message["ReceiptHandle"]
+                QueueUrl=self.queue_url,
+                ReceiptHandle=message["ReceiptHandle"],
             )
             self.pricing = json.loads(message["Body"])
 
@@ -117,7 +118,7 @@ class Indicator:
             query=f"""
                 INSERT INTO indicator_results (component_name, time, value)
                 VALUES ('{self.component_name}', '{timestamp}', '{value}')
-            """
+            """,
         )
         logger.info(f"Saved indicator results for {self.component_name}")
 

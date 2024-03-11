@@ -17,8 +17,8 @@ class Stream(BaseModel):
     instrument: Optional[str] = None
     time: str
     tradeable: Optional[bool] = None
-    bids: Optional[List[Pricing]] = []
-    asks: Optional[List[Pricing]] = []
+    bids: Optional[list[Pricing]] = []
+    asks: Optional[list[Pricing]] = []
     closeoutBid: Optional[str] = None
     closeoutAsk: Optional[str] = None
     status: Optional[str] = None

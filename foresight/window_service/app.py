@@ -1,4 +1,5 @@
 """Aggregates the data from the database and calculates one-minute averages."""
+
 import logging
 import time
 
@@ -41,8 +42,8 @@ def fetch_data(instrument: str = "EUR_USD", timescale: str = "M") -> pd.DataFram
                         AND time >= NOW() - INTERVAL '60 minute'
                         GROUP BY time
                         ORDER BY time ASC
-                    """
-                )
+                    """,
+                ),
             )
 
             return (
@@ -58,8 +59,8 @@ def fetch_data(instrument: str = "EUR_USD", timescale: str = "M") -> pd.DataFram
                         WHERE instrument = '{instrument}'
                         AND time >= NOW() - INTERVAL '60 minute'
                         ORDER BY time ASC
-                    """
-                )
+                    """,
+                ),
             )
         else:
             raise Exception(f"Invalid timescale: {timescale}")
@@ -76,7 +77,7 @@ if __name__ == "__main__":
         timescale VARCHAR(10) NOT NULL,
         order_type VARCHAR(10) NOT NULL,
         PRIMARY KEY (queue_url, instrument, timescale)
-    )"""
+    )""",
     )
 
     sqsClient: Client = get_client("sqs")
@@ -84,7 +85,7 @@ if __name__ == "__main__":
     while True:
         try:
             subscriptions = TimeScaleService().execute(
-                query="""SELECT queue_url, instrument, timescale, order_type FROM subscription_feeds"""
+                query="""SELECT queue_url, instrument, timescale, order_type FROM subscription_feeds""",
             )
 
             # Calculate averages for each subscription

@@ -34,7 +34,7 @@ def get_latest() -> list[dict]:
         query="""SELECT DISTINCT ON (component_name) component_name, value
             FROM indicator_results
             ORDER BY component_name, time DESC
-        """
+        """,
     )
 
 

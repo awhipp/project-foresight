@@ -48,6 +48,8 @@ class MovingAverageIndicator(Indicator):
 
 if __name__ == "__main__":
     maInd = MovingAverageIndicator(
-        instrument="EUR_USD", timescale="M", order_type="mid"
+        instrument="EUR_USD",
+        timescale="M",
+        order_type="mid",
     )
     maInd.schedule_work()

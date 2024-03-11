@@ -41,20 +41,21 @@ class TimeScaleService:
             "database": os.getenv("TIMESCALE_DB"),  # Replace with your database name
             "user": os.getenv("TIMESCALE_USER"),  # Replace with your database user
             "password": os.getenv(
-                "TIMESCALE_PASSWORD"
+                "TIMESCALE_PASSWORD",
             ),  # Replace with your database password
         }
 
         if self.connection is None:
             try:
                 self.connection = psycopg2.connect(
-                    **db_params, cursor_factory=psycopg2.extras.RealDictCursor
+                    **db_params,
+                    cursor_factory=psycopg2.extras.RealDictCursor,
                 )
                 self.connection.autocommit = True
                 logger.info("Connected to TimescaleDB")
             except Exception as connection_exception:
                 raise Exception(
-                    f"Failed to connect to the database: {connection_exception}"
+                    f"Failed to connect to the database: {connection_exception}",
                 )
 
     def create_table(self, query, hyper_table_name=None, hyper_table_column=None):
@@ -66,7 +67,7 @@ class TimeScaleService:
                     if hyper_table_name is not None and hyper_table_column is not None:
                         try:
                             cursor.execute(
-                                f"SELECT create_hypertable('{hyper_table_name}', '{hyper_table_column}')"
+                                f"SELECT create_hypertable('{hyper_table_name}', '{hyper_table_column}')",
                             )
                         except psycopg2.DatabaseError:
                             logger.info("Already created the hyper table. Skipping.")

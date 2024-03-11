@@ -34,7 +34,7 @@ Overall, this architecture facilitates the continuous flow of data from ticket s
 
 [Install Python 3.11^](https://www.python.org/downloads/release/python-3112/)
 
-[Install Poetry](https://python-poetry.org/docs/#installation)
+[Install Poetry 1.4.2](https://python-poetry.org/docs/#installation)
 
 (Optional) Enable Local Poetry Virtual Env Globally
 
