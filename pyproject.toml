@@ -20,6 +20,7 @@ pydantic = "^2.6.3"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.6.2"
+pytest = "^7"
 
 [tool.isort]
 profile = "black"
