@@ -1,0 +1,38 @@
+name: Versioning Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  determine-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Analyze Commit Messages and Bump Version
+        run: |
+          # Custom script to analyze commit messages and determine version bump
+          ## Stored in .github/analyze_git_history.py
+          ## Assuming the script outputs the determined version bump as 'patch', 'minor', or 'major'
+          ## Only None if there is no relevant commits.
+          version_bump=$(python .github/analyze_git_history.py)
+
+          if [ "$version_bump" == "patch" ]; then
+            poetry version patch
+          elif [ "$version_bump" == "minor" ]; then
+            poetry version minor
+          elif [ "$version_bump" == "major" ]; then
+            poetry version major
+          else
+            echo "Invalid version bump type ($version_bump). Skipping."
+            exit 0
+          fi
+
+          # Commit the version change
+          git add pyproject.toml
+          git commit -m "chore: Bump version ($version_bump)"
+          git push origin main
