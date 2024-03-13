@@ -22,6 +22,10 @@ def open_stream():
     """Open a stream to the OANDA API and send the data to the data store."""
     account_id = os.getenv("OANDA_ACCOUNT_ID")
     api_token = os.getenv("OANDA_TOKEN")
+    OANDA_API = os.getenv("OANDA_API", "https://stream-fxpractice.oanda.com/v3/")
+    if not OANDA_API.endswith("/"):
+        OANDA_API += "/"
+
     random_walk = os.getenv("APP_RANDOM_WALK", "False").lower() == "true"
 
     if random_walk:
@@ -57,7 +61,7 @@ def open_stream():
             sleep(5)
 
     else:
-        url = f"https://stream-fxpractice.oanda.com/v3/accounts/{account_id}/pricing/stream?instruments=EUR_USD"
+        url = f"{OANDA_API}accounts/{account_id}/pricing/stream?instruments=EUR_USD"
         head = {
             "Content-type": "application/json",
             "Accept-Datetime-Format": "RFC3339",

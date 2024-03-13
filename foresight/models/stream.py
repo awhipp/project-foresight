@@ -2,7 +2,6 @@
 This module contains the Pydantic models for the Steam API.
 """
 
-from typing import List
 from typing import Optional
 
 from pydantic import BaseModel

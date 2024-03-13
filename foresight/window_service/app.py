@@ -85,7 +85,7 @@ if __name__ == "__main__":
     while True:
         try:
             subscriptions = TimeScaleService().execute(
-                query="""SELECT queue_url, instrument, timescale, order_type FROM subscription_feeds""",
+                query="SELECT queue_url, instrument, timescale, order_type FROM subscription_feeds",
             )
 
             # Calculate averages for each subscription

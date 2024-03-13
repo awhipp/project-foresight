@@ -1,5 +1,6 @@
 """Provides a singleton class to interact with the TimescaleDB database."""
 
+import logging
 import os
 
 import dotenv
@@ -8,8 +9,6 @@ import psycopg2.extras
 
 
 dotenv.load_dotenv(".env")
-
-import logging
 
 
 logging.basicConfig(
@@ -58,21 +57,22 @@ class TimeScaleService:
                     f"Failed to connect to the database: {connection_exception}",
                 )
 
-    def create_table(self, query, hyper_table_name=None, hyper_table_column=None):
+    def create_table(self, query, ht_name=None, ht_column=None):
         """Create a table in the database."""
         if self.connection is not None:
             try:
                 with self.connection.cursor() as cursor:
                     cursor.execute(query)
-                    if hyper_table_name is not None and hyper_table_column is not None:
+                    if ht_name is not None and ht_column is not None:
                         try:
                             cursor.execute(
-                                f"SELECT create_hypertable('{hyper_table_name}', '{hyper_table_column}')",
+                                f"SELECT create_hypertable('{ht_name}', '{ht_column}')",
                             )
                         except psycopg2.DatabaseError:
                             logger.info("Already created the hyper table. Skipping.")
             except Exception as table_create_exception:
                 raise Exception(f"Failed to create table: {table_create_exception}")
+
         else:
             raise Exception("Database connection not established.")
 
@@ -98,10 +98,7 @@ class TimeScaleService:
 
 
 # Example usage:
-
-if __name__ == "__main__":
-    # Execute a sample query against native tables.
-    result = TimesScaleService().execute("SELECT * FROM pg_catalog.pg_tables")
-
-    # Close the database connection when done.
-    TimesScaleService().close()
+# # Execute a sample query against native tables.
+# result = TimesScaleService().execute("SELECT * FROM pg_catalog.pg_tables")
+# # Close the database connection when done.
+# TimesScaleService().close()
