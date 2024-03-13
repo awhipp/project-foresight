@@ -1,0 +1,161 @@
+<!-- table.html -->
+
+<!doctype html>
+<html>
+  <head>
+    <title>Simple Moving Average Display</title>
+  </head>
+
+  <body>
+    <main>
+      <h1>Simple Moving Average</h1>
+      <sub><a href="/"> &lt; Back to Dashboard </a></sub>
+      <br />
+      <hr />
+    </main>
+  </body>
+
+  <!-- JQuery-->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/moment@2.27.0"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@0.1.1"></script>
+
+  <style>
+    main {
+      text-align: center;
+      max-width: 85%;
+      margin: 0 auto;
+    }
+  </style>
+
+  <script>
+    function handler(data) {
+      $("main").append('<canvas id="lineChart"></canvas>');
+      // Extract time and price arrays from JSON data
+      var times = data.map(function (item) {
+        dt = new Date(item.time);
+        // remove seconds
+        dt.setSeconds(0);
+        return dt;
+      });
+      var prices = data.map(function (item) {
+        return item.price;
+      });
+      var ma_slow = data.map(function (item) {
+        return item.ma_slow;
+      });
+      var ma_fast = data.map(function (item) {
+        return item.ma_fast;
+      });
+
+      console.log(prices);
+
+      // Get the canvas element and create a line chart
+      var ctx = document.getElementById("lineChart").getContext("2d");
+      var chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: times,
+          datasets: [
+            {
+              label: "Price",
+              data: prices,
+              borderColor: "black",
+              backgroundColor: "rgba(0, 0, 0, 0.2)",
+              tension: 0.5,
+            },
+            {
+              label: "MA Slow",
+              data: ma_slow,
+              borderColor: "red",
+              backgroundColor: "rgba(255, 0, 0, 0.2)",
+              fill: false,
+              tension: 0.5,
+            },
+            {
+              label: "MA Fast",
+              data: ma_fast,
+              borderColor: "green",
+              backgroundColor: "rgba(0, 255, 0, 0.2)",
+              fill: false,
+              tension: 0.5,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          scales: {
+            x: {
+              type: "time",
+              time: {
+                unit: "second",
+                displayFormats: {
+                  hour: "HH:mm",
+                },
+                parser: "YYYY-MM-DD HH:mm:ss",
+                tooltipFormat: "YYYY-MM-DD HH:mm",
+              },
+            },
+          },
+        },
+      });
+
+      return chart;
+    }
+
+    function updater(data, chart) {
+      // Extract time and price arrays from JSON data
+      var times = data.map(function (item) {
+        return new Date(item.time);
+      });
+      var prices = data.map(function (item) {
+        return item.price;
+      });
+      var ma_slow = data.map(function (item) {
+        return item.ma_slow;
+      });
+      var ma_fast = data.map(function (item) {
+        return item.ma_fast;
+      });
+
+      // Update the chart
+      chart.data.labels = times;
+      chart.data.datasets[0].data = prices;
+      chart.data.datasets[1].data = ma_slow;
+      chart.data.datasets[2].data = ma_fast;
+      chart.update();
+    }
+  </script>
+  <script>
+    // Get the table data from the server
+    $.ajax({
+      url: "/latest",
+      type: "GET",
+      dataType: "json",
+      success: function (data) {
+        rel_data = data["moving_average"];
+        chart = handler(rel_data);
+        // Update the table every 5 seconds
+        setInterval(function () {
+          $.ajax({
+            url: "/latest",
+            type: "GET",
+            dataType: "json",
+            success: function (data) {
+              rel_data = data["moving_average"];
+              updater(rel_data, chart);
+            },
+            error: function (xhr, status, error) {
+              console.log("Error: " + error);
+            },
+          });
+        }, 5000);
+      },
+      error: function (xhr, status, error) {
+        console.log("Error: " + error);
+      },
+    });
+  </script>
+</html>
