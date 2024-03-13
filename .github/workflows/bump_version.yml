@@ -53,9 +53,13 @@ jobs:
             exit 0
           fi
 
-          # Commit the version change
+          # Commit the version change to pyproject.toml
           git add pyproject.toml
           git config --global user.email "GitHubActionRunner@fake.email.com"
           git config --global user.name "Github Action Runner"
           git commit -m "chore: Bump version ($version_bump)"
           git push origin main
+
+          # Tag the commit with the new version
+          git tag $(poetry version -s)
+          git push origin $(poetry version -s)
