@@ -12,7 +12,9 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
+        with: 
+          fetch-depth: "0"
+          
       - name: Analyze Commit Messages and Bump Version
         run: |
           # Custom script to analyze commit messages and determine version bump
