@@ -7,6 +7,8 @@ import dotenv
 import psycopg2
 import psycopg2.extras
 
+from foresight.models.forex_data import ForexData
+
 
 dotenv.load_dotenv(".env")
 
@@ -57,16 +59,16 @@ class TimeScaleService:
                     f"Failed to connect to the database: {connection_exception}",
                 )
 
-    def create_table(self, query, ht_name=None, ht_column=None):
+    def create_table(self, query, table_name=None, column_name=None):
         """Create a table in the database."""
         if self.connection is not None:
             try:
                 with self.connection.cursor() as cursor:
                     cursor.execute(query)
-                    if ht_name is not None and ht_column is not None:
+                    if table_name is not None and column_name is not None:
                         try:
                             cursor.execute(
-                                f"SELECT create_hypertable('{ht_name}', '{ht_column}')",
+                                f"SELECT create_hypertable('{table_name}', '{column_name}')",
                             )
                         except psycopg2.DatabaseError:
                             logger.info("Already created the hyper table. Skipping.")
@@ -95,6 +97,19 @@ class TimeScaleService:
         if self.connection is not None:
             self.connection.close()
             self.connection = None
+
+    def insert_forex_data(self, forex_data: ForexData, table_name: str = "forex_data"):
+        """Insert forex data into the database."""
+        self.execute(
+            query=f"""INSERT INTO {table_name} (instrument, time, bid, ask)
+            VALUES (%s, %s, %s, %s)""",
+            params=(
+                forex_data.instrument,
+                forex_data.time,
+                forex_data.bid,
+                forex_data.ask,
+            ),
+        )
 
 
 # Example usage:

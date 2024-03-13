@@ -6,5 +6,5 @@ from pydantic import BaseModel
 class Pricing(BaseModel):
     """A Pydantic model for the pricing API."""
 
-    price: str
-    liquidity: int
+    price: float
+    liquidity: int = 1
