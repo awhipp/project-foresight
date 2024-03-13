@@ -1,5 +1,9 @@
 # Project Foresight
 
+[![Python Tests](https://github.com/awhipp/project-foresight/actions/workflows/python_tests.yml/badge.svg)](https://github.com/awhipp/project-foresight/actions/workflows/python_tests.yml)
+
+[![Code Linting and Pre-commit Checks](https://github.com/awhipp/project-foresight/actions/workflows/precommit_checks.yml/badge.svg)](https://github.com/awhipp/project-foresight/actions/workflows/precommit_checks.yml)
+
 ## Description
 
 Overall, this architecture facilitates the continuous flow of data from ticket sources to the user interface, with various microservices handling data ingestion, aggregation, calculations, storage, and presentation. It provides a scalable and maintainable solution for processing and visualizing ticket-related indicators.
@@ -34,7 +38,7 @@ Overall, this architecture facilitates the continuous flow of data from ticket s
 
 [Install Python 3.11^](https://www.python.org/downloads/release/python-3112/)
 
-[Install Poetry 1.4.2](https://python-poetry.org/docs/#installation)
+[Install Poetry](https://python-poetry.org/docs/#installation)
 
 (Optional) Enable Local Poetry Virtual Env Globally
 
