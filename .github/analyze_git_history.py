@@ -51,7 +51,7 @@ def determine_version_bump(valid_messages):
 
 if __name__ == "__main__":
     # Determine version bump
-    version_bump = determine_version_bump(get_commit_messages())
+    version_bump_type = determine_version_bump(get_commit_messages())
 
     # Output version bump
-    print(version_bump)
+    print(version_bump_type)
