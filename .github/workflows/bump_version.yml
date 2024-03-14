@@ -34,13 +34,24 @@ jobs:
       - name: Install dependencies
         run: python -m poetry install
 
+      - name: Install GitHub CLI
+        env: # Or as an environment variable
+          RELEASE_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          echo $RELEASE_TOKEN > token.txt
+          gh auth login --with-token < token.txt
+
       - name: Analyze Commit Messages and Bump Version
         run: |
           # Custom script to analyze commit messages and determine version bump
-          ## Stored in .github/analyze_git_history.py
+          ## Stored in .github/get_version_bump_type.py
           ## Assuming the script outputs the determined version bump as 'patch', 'minor', or 'major'
           ## Only None if there is no relevant commits.
-          version_bump=$(python .github/analyze_git_history.py)
+          version_bump=$(python .github/get_version_bump_type.py)
+
+          # Custom script to retrieve commit messages for release
+          ## Stored in .github/valid_git_history.py
+          valid_git_history=$(python .github/valid_git_history.py)
 
           if [ "$version_bump" == "patch" ]; then
             poetry version patch
@@ -63,3 +74,6 @@ jobs:
           # Tag the commit with the new version
           git tag $(poetry version -s)
           git push origin $(poetry version -s)
+
+          # Create a release
+          gh release create $(poetry version -s) -t "Release $(poetry version -s)" -n "$valid_git_history"
