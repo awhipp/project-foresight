@@ -2,7 +2,9 @@
 
 import json
 import logging
+import os
 
+import dotenv
 from flask import Flask
 from flask import jsonify
 from flask import render_template
@@ -11,6 +13,9 @@ from foresight.utils.database import TimeScaleService
 
 
 app = Flask(__name__)
+
+# Load environment variables
+dotenv.load_dotenv()
 
 # Setup logging and log timestamp prepend
 logging.basicConfig(
@@ -58,4 +63,5 @@ def get_latest_data():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    debug_mode = os.getenv("APP_DEBUG", "False").lower() == "true"
+    app.run(debug=debug_mode)
