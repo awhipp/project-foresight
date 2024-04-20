@@ -3,7 +3,10 @@
 import time
 from datetime import datetime
 
+import pytest
+
 from foresight.models.stream import Stream
+from foresight.stream_service.app import open_oanda_stream
 from foresight.stream_service.app import open_random_walk_stream
 from foresight.stream_service.app import process_stream_data
 from foresight.utils.database import TimeScaleService
@@ -102,3 +105,28 @@ def test_process_steam_data(create_timescale_table):
     assert record["time"].replace(tzinfo=None) == sample_stream_record.time.replace(
         tzinfo=None,
     )
+
+
+def test_open_oanda_stream(create_timescale_table):
+    """Test the open_oanda_stream method."""
+    # ARRANGE
+    table_name = create_timescale_table
+
+    # ACT
+    open_oanda_stream(run_forever=False, limit=1)
+
+    # ASSERT
+    records = TimeScaleService().execute(
+        query=f"SELECT * FROM {table_name}",
+    )
+    assert records is not None
+
+
+def test_open_oanda_stream_invalid():
+    """Test the open_oanda_stream method with invalid arguments."""
+
+    with pytest.raises(ValueError):
+        open_oanda_stream(run_forever=False, limit=None)
+
+    with pytest.raises(ValueError):
+        open_oanda_stream(run_forever=True, limit=1)
