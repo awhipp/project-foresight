@@ -61,7 +61,8 @@ The following sets up
 - pre-commit
 
 ```bash
-docker-compose up -d
+sudo service docker start
+sudo docker-compose up -d
 ```
 
 ### Deploy Services
@@ -80,6 +81,12 @@ python stream_service/app.py
 python window_service/app.py
 python indicator_service/moving_average_indicator.py
 python interface_service/app.py
+```
+
+### Run Tests
+
+```bash
+python -m pytest --disable-warnings -xv
 ```
 
 ## End State Architecture

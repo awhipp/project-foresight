@@ -11,6 +11,9 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Build stack
+      run: docker-compose build -d
+
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -29,3 +32,30 @@ jobs:
 
     - name: Install dependencies
       run: python -m poetry install
+
+    - name: Run tests
+      env:
+        OANDA_ACCOUNT_ID: ${{secrets.OANDA_ACCOUNT_ID}}
+        OANDA_TOKEN: ${{secrets.OANDA_TOKEN}}
+        APP_RANDOM_WALK: "True"
+        TIMESCALE_HOST: 127.0.0.1
+        TIMESCALE_PORT: 5432
+        TIMESCALE_DB: project_foresight
+        TIMESCALE_USER: postgres
+        TIMESCALE_PASSWORD: postgres
+        AWS_ENDPOINT_URL: http://localhost:4566
+      run: python -m poetry run python -m pytest --disable-warnings -xv --cov=. --cov-report=xml
+
+    - name: Pytest coverage comment
+      uses: MishaKav/pytest-coverage-comment@main
+      with:
+        pytest-xml-coverage-path: ./coverage.xml
+        title: Code Coverage
+        badge-title: Code Coverage
+        hide-badge: false
+        hide-report: false
+        create-new-comment: false
+        hide-comment: false
+        report-only-changed-files: false
+        remove-link-from-badge: false
+        unique-id-for-comment: python3.9

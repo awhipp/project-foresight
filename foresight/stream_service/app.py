@@ -6,6 +6,7 @@ import traceback
 from datetime import datetime
 from random import random
 from time import sleep
+from typing import Optional
 from typing import Union
 
 import dotenv
@@ -89,10 +90,20 @@ def process_stream_data(line: str, table_name: str = "forex_data"):
             logger.info(record)
 
 
-def open_oanda_stream():
+def open_oanda_stream(run_forever: bool = True, limit: Optional[int] = None):
     """
     Open a stream to the OANDA API and send the data to the data store.
+
+    Args:
+        run_forever (bool): Whether to run the stream forever.
+        limit (Optional[int]): The number of records to limit the stream to.
     """
+    if not run_forever and limit is None:
+        raise ValueError("If not running forever, limit must be greater than 0.")
+
+    if run_forever and limit is not None:
+        raise ValueError("If running forever, limit must be None.")
+
     account_id = os.getenv("OANDA_ACCOUNT_ID")
     api_token = os.getenv("OANDA_TOKEN")
     OANDA_API = os.getenv("OANDA_API", "https://stream-fxpractice.oanda.com/v3/")
@@ -106,8 +117,11 @@ def open_oanda_stream():
         "Authorization": f"Bearer {api_token}",
     }
     resp = requests.get(url, headers=head, stream=True, timeout=30).iter_lines()
-    for line in resp:
+    for resp_idx, line in enumerate(resp):
         process_stream_data(line)
+
+        if limit is not None and resp_idx >= limit:
+            break
 
 
 def open_stream():
