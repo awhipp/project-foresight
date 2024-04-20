@@ -4,6 +4,10 @@
 
 [![Code Linting and Pre-commit Checks](https://github.com/awhipp/project-foresight/actions/workflows/precommit_checks.yml/badge.svg)](https://github.com/awhipp/project-foresight/actions/workflows/precommit_checks.yml)
 
+[![Versioning Workflow](https://github.com/awhipp/project-foresight/actions/workflows/bump_version.yml/badge.svg)](https://github.com/awhipp/project-foresight/actions/workflows/bump_version.yml)
+
+[![CodeQL](https://github.com/awhipp/project-foresight/actions/workflows/github-code-scanning/codeql/badge.svg)](https://github.com/awhipp/project-foresight/actions/workflows/github-code-scanning/codeql)
+
 ## Description
 
 Overall, this architecture facilitates the continuous flow of data from ticket sources to the user interface, with various microservices handling data ingestion, aggregation, calculations, storage, and presentation. It provides a scalable and maintainable solution for processing and visualizing ticket-related indicators.

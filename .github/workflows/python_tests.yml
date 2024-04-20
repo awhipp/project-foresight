@@ -12,7 +12,7 @@ jobs:
       uses: actions/checkout@v4
 
     - name: Build stack
-      run: docker-compose build -d
+      run: docker-compose up -d
 
     - name: Set up Python
       uses: actions/setup-python@v5
