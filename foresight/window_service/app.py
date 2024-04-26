@@ -18,6 +18,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+timeMap: dict = {"S": "second", "M": "minute", "H": "hour", "D": "day"}
+
+
 def fetch_data(instrument: str = "EUR_USD", timescale: str = "M") -> pd.DataFrame:
     """
     Fetch all data from the database and return a DataFrame.
@@ -30,42 +33,26 @@ def fetch_data(instrument: str = "EUR_USD", timescale: str = "M") -> pd.DataFram
         dict: The data from the database
     """
     try:
-        # Fetch all data from the database based on the parameters
-        if timescale == "M":
-            df = pd.DataFrame(
-                TimeScaleService().execute(
-                    query=f"""
-                        SELECT TO_CHAR(date_trunc('minute', time), 'YYYY-MM-DD HH24:MI:SS') as time,
-                        AVG(ask) as ask, AVG(bid) as bid
-                        FROM forex_data
-                        WHERE instrument = '{instrument}'
-                        AND time >= NOW() - INTERVAL '60 minute'
-                        GROUP BY time
-                        ORDER BY time ASC
-                    """,
-                ),
-            )
+        df = pd.DataFrame(
+            TimeScaleService().execute(
+                query=f"""
+                    SELECT
+                    TO_CHAR(
+                        date_trunc('{timeMap[timescale.lower()]}', time), 'YYYY-MM-DD HH24:MI:SS'
+                    ) as time,
+                    AVG(ask) as ask, AVG(bid) as bid
+                    FROM forex_data
+                    WHERE instrument = '{instrument}'
+                    AND time >= NOW() - INTERVAL '60 minute'
+                    GROUP BY time
+                    ORDER BY time ASC
+                """,
+            ),
+        )
 
-            return (
-                df.groupby(df["time"]).agg({"ask": "mean", "bid": "mean"}).reset_index()
-            )
-        elif timescale == "T":
-            return pd.DataFrame(
-                TimeScaleService().execute(
-                    query=f"""
-                        SELECT TO_CHAR(time, 'YYYY-MM-DD HH24:MI:SS') as time,
-                        ask, bid
-                        FROM forex_data
-                        WHERE instrument = '{instrument}'
-                        AND time >= NOW() - INTERVAL '60 minute'
-                        ORDER BY time ASC
-                    """,
-                ),
-            )
-        else:
-            raise Exception(f"Invalid timescale: {timescale}")
-    except Exception as fetch_exception:
-        logger.error(f"Error: {fetch_exception}")
+        return df.groupby(df["time"]).agg({"ask": "mean", "bid": "mean"}).reset_index()
+    except Exception as fetch_exception:  # pylint: disable=broad-except
+        logger.error("Error fetching data: %s", fetch_exception)
 
 
 if __name__ == "__main__":
