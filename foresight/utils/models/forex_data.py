@@ -2,9 +2,16 @@
 
 from datetime import datetime
 
+import pandas as pd
 from pydantic import BaseModel
 
 from foresight.utils.database import TimeScaleService
+from foresight.utils.logger import generate_logger
+
+
+logger = generate_logger(name=__name__)
+
+timeMap: dict = {"S": "second", "M": "minute", "H": "hour", "D": "day"}
 
 
 class ForexData(BaseModel):
@@ -71,3 +78,42 @@ class ForexData(BaseModel):
 
         # Execute SQL queries here
         TimeScaleService().execute(query=f"DROP TABLE {table_name}")
+
+    @staticmethod
+    def fetch(instrument: str = "EUR_USD", timescale: str = "M") -> pd.DataFrame:
+        """
+        Fetch all data from the database and return a DataFrame.
+
+        Parameters:
+            instrument (str): The instrument to fetch
+            timescale (str): The timescale to fetch (S = Second, M = Minute)
+
+        Returns:
+            dict: The data from the database
+        """
+        try:
+            df = pd.DataFrame(
+                TimeScaleService().execute(
+                    query=f"""
+                        SELECT
+                        TO_CHAR(
+                            date_trunc(
+                                '{timeMap[timescale.lower()]}', time
+                            ),
+                            'YYYY-MM-DD HH24:MI:SS'
+                        ) as time,
+                        AVG(ask) as ask, AVG(bid) as bid
+                        FROM forex_data
+                        WHERE instrument = '{instrument}'
+                        AND time >= NOW() - INTERVAL '60 minute'
+                        GROUP BY time
+                        ORDER BY time ASC
+                    """,
+                ),
+            )
+
+            return (
+                df.groupby(df["time"]).agg({"ask": "mean", "bid": "mean"}).reset_index()
+            )
+        except Exception as fetch_exception:  # pylint: disable=broad-except
+            logger.error("Error fetching data: %s", fetch_exception)

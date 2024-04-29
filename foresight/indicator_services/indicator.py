@@ -2,9 +2,6 @@
 
 import datetime
 import json
-
-# Setup logging and log timestamp prepend
-import logging
 import time
 
 import pandas as pd
@@ -12,13 +9,10 @@ from boto3_type_annotations.sqs import Client
 from utils.aws import get_client
 from utils.database import TimeScaleService
 
+from foresight.utils.logger import generate_logger
 
-logging.basicConfig(
-    format="%(asctime)s %(levelname)-8s %(message)s",
-    level=logging.INFO,
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
+
+logger = generate_logger(name=__name__)
 
 
 class Indicator:

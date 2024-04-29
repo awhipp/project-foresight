@@ -1,22 +1,18 @@
 """Provides a singleton class to interact with the TimescaleDB database."""
 
-import logging
 import os
 
 import dotenv
 import psycopg2
 import psycopg2.extras
 
+from foresight.utils.logger import generate_logger
+
 
 dotenv.load_dotenv(".env")
 
 
-logging.basicConfig(
-    format="%(asctime)s %(levelname)-8s %(message)s",
-    level=logging.INFO,
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
+logger = generate_logger(name=__name__)
 
 
 class TimeScaleService:

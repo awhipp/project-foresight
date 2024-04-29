@@ -12,9 +12,9 @@ from typing import Union
 import dotenv
 import requests
 
-from foresight.stream_service.models.forex_data import ForexData
 from foresight.stream_service.models.stream import Stream
 from foresight.utils.logger import generate_logger
+from foresight.utils.models.forex_data import ForexData
 
 
 logger = generate_logger(__name__)

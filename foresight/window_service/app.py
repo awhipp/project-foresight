@@ -1,6 +1,5 @@
 """Aggregates the data from the database and calculates one-minute averages."""
 
-import logging
 import time
 
 import pandas as pd
@@ -8,55 +7,15 @@ from boto3_type_annotations.sqs import Client
 
 from foresight.utils.aws import get_client
 from foresight.utils.database import TimeScaleService
+from foresight.utils.logger import generate_logger
+from foresight.utils.models.forex_data import ForexData
 
 
-logging.basicConfig(
-    format="%(asctime)s %(levelname)-8s %(message)s",
-    level=logging.INFO,
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
-
-
-timeMap: dict = {"S": "second", "M": "minute", "H": "hour", "D": "day"}
-
-
-def fetch_data(instrument: str = "EUR_USD", timescale: str = "M") -> pd.DataFrame:
-    """
-    Fetch all data from the database and return a DataFrame.
-
-    Parameters:
-        instrument (str): The instrument to fetch
-        timescale (str): The timescale to fetch (T = tick, M = minutes)
-
-    Returns:
-        dict: The data from the database
-    """
-    try:
-        df = pd.DataFrame(
-            TimeScaleService().execute(
-                query=f"""
-                    SELECT
-                    TO_CHAR(
-                        date_trunc('{timeMap[timescale.lower()]}', time), 'YYYY-MM-DD HH24:MI:SS'
-                    ) as time,
-                    AVG(ask) as ask, AVG(bid) as bid
-                    FROM forex_data
-                    WHERE instrument = '{instrument}'
-                    AND time >= NOW() - INTERVAL '60 minute'
-                    GROUP BY time
-                    ORDER BY time ASC
-                """,
-            ),
-        )
-
-        return df.groupby(df["time"]).agg({"ask": "mean", "bid": "mean"}).reset_index()
-    except Exception as fetch_exception:  # pylint: disable=broad-except
-        logger.error("Error fetching data: %s", fetch_exception)
+logger = generate_logger(name=__name__)
 
 
 if __name__ == "__main__":
-    # Execute SQL queries here
+    # ! TODO create subscription_feeds class
     TimeScaleService().create_table(
         query="""CREATE TABLE IF NOT EXISTS subscription_feeds (
         queue_url VARCHAR(255) NOT NULL,
@@ -77,7 +36,7 @@ if __name__ == "__main__":
 
             # Calculate averages for each subscription
             for subscription in subscriptions:
-                data = fetch_data(
+                data: pd.DataFrame = ForexData.fetch(
                     instrument=subscription["instrument"],
                     timescale=subscription["timescale"],
                 )
@@ -105,7 +64,6 @@ if __name__ == "__main__":
             logger.error(f"Error: {sending_exception}")
 
         # Run at the start of the next minutes
-        # til_next_minute = round(60 - time.time() % 60, 2)
-        # logger.info(f"Sleeping for {til_next_minute} seconds")
-        # time.sleep(til_next_minute)
-        time.sleep(5)
+        til_next_minute = round(60 - time.time() % 60, 2)
+        logger.info(f"Sleeping for {til_next_minute} seconds")
+        time.sleep(til_next_minute)

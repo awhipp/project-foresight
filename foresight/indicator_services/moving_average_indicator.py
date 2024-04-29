@@ -1,16 +1,12 @@
-# Setup logging and log timestamp prepend
-import logging
+"""Moving average indicator class"""
 
 import pandas as pd
-from indicator import Indicator
+
+from foresight.indicator_services.indicator import Indicator
+from foresight.utils.logger import generate_logger
 
 
-logging.basicConfig(
-    format="%(asctime)s %(levelname)-8s %(message)s",
-    level=logging.INFO,
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
+logger = generate_logger(name=__name__)
 
 
 class MovingAverageIndicator(Indicator):

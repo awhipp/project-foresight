@@ -4,8 +4,8 @@ import datetime
 
 import pytest
 
-from foresight.stream_service.models.forex_data import ForexData
 from foresight.utils.database import TimeScaleService
+from foresight.utils.models.forex_data import ForexData
 
 
 def test_valid_forex_data():
