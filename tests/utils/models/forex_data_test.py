@@ -77,3 +77,39 @@ def test_create_table():
     assert len(table_schema) == 4  # 4 columns
     for column in table_schema:
         assert column["data_type"] == expected_columns[column["column_name"]]
+
+
+def test_to_price_json():
+    """Test the to_price_json method."""
+
+    dt = datetime.datetime(2021, 1, 1, 0, 0)
+    forex_data = ForexData(
+        instrument="EUR_USD",
+        time=dt,
+        bid=1.0,
+        ask=2.0,
+    )
+
+    json_data = forex_data.to_price_json(order_type="bid")
+    assert json_data == {
+        "instrument": "EUR_USD",
+        "time": dt,
+        "price": 1.0,
+    }
+
+    json_data = forex_data.to_price_json(order_type="ask")
+    assert json_data == {
+        "instrument": "EUR_USD",
+        "time": dt,
+        "price": 2.0,
+    }
+
+    json_data = forex_data.to_price_json(order_type="mid")
+    assert json_data == {
+        "instrument": "EUR_USD",
+        "time": dt,
+        "price": 1.5,
+    }
+
+    with pytest.raises(ValueError):
+        forex_data.to_price_json(order_type="invalid")

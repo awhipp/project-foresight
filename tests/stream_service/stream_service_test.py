@@ -17,9 +17,10 @@ def test_open_random_walk_stream(create_forex_data_table):
 
     # ARRANGE
     table_name = create_forex_data_table
+    MAX_WALK = 10
 
     # ACT
-    open_random_walk_stream(max_walk=10, table_name=table_name)
+    open_random_walk_stream(max_walk=MAX_WALK, table_name=table_name)
     time.sleep(1)
 
     # ASSERT
@@ -27,11 +28,12 @@ def test_open_random_walk_stream(create_forex_data_table):
         query=f"SELECT * FROM {table_name}",
     )
 
-    assert len(records) == 10  # 10 records
     for record in records:
         assert record["instrument"] == "EUR_USD"
         assert record["bid"] > 0
         assert record["ask"] > 0
+
+    assert len(records) == MAX_WALK
 
 
 def test_process_steam_data(create_forex_data_table):

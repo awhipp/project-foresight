@@ -80,7 +80,7 @@ class ForexData(BaseModel):
         TimeScaleService().execute(query=f"DROP TABLE {table_name}")
 
     @staticmethod
-    def fetch(instrument: str = "EUR_USD", timescale: str = "M") -> pd.DataFrame:
+    def fetch(instrument: str = "EUR_USD", timescale: str = "M") -> list["ForexData"]:
         """
         Fetch all data from the database and return a DataFrame.
 
@@ -112,8 +112,42 @@ class ForexData(BaseModel):
                 ),
             )
 
-            return (
+            df = (
                 df.groupby(df["time"]).agg({"ask": "mean", "bid": "mean"}).reset_index()
             )
+            return [
+                ForexData(
+                    instrument=instrument,
+                    time=datetime.strptime(row["time"], "%Y-%m-%d %H:%M:%S"),
+                    bid=row["bid"],
+                    ask=row["ask"],
+                )
+                for _, row in df.iterrows()
+            ]
         except Exception as fetch_exception:  # pylint: disable=broad-except
             logger.error("Error fetching data: %s", fetch_exception)
+
+    def to_price_json(self, order_type: str = "ask") -> dict:
+        """Convert the data to JSON format.
+
+        Args:
+            order_type (str): The type of order to convert to JSON.
+
+        Returns:
+            dict: The data in JSON format.
+        """
+        json: dict = {
+            "instrument": self.instrument,
+            "time": self.time,
+        }
+
+        if order_type == "ask":
+            json["price"] = self.ask
+        elif order_type == "bid":
+            json["price"] = self.bid
+        elif order_type == "mid":
+            json["price"] = round((self.bid + self.ask) / 2.0, 5)
+        else:
+            raise ValueError("Invalid order type")
+
+        return json
