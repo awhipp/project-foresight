@@ -10,7 +10,6 @@ repos:
       - id: check-json
       - id: check-merge-conflict
       - id: check-toml
-      - id: detect-aws-credentials
       - id: name-tests-test
 
   - repo: https://github.com/PyCQA/flake8

@@ -1,6 +1,7 @@
 """Provides a singleton class to interact with the TimescaleDB database."""
 
 import os
+from typing import Union
 
 import dotenv
 import psycopg2
@@ -74,12 +75,16 @@ class TimeScaleService:
         else:
             raise Exception("Database connection not established.")
 
-    def execute(self, query, params=None):
+    def execute(self, query, params: Union[tuple, list] = None):
         """Execute a query on the database."""
         if self.connection is not None:
             try:
                 with self.connection.cursor() as cursor:
-                    cursor.execute(query, params)
+                    if params is None or isinstance(params, tuple):
+                        cursor.execute(query, params)
+                    elif isinstance(params, list):
+                        psycopg2.extras.execute_values(cursor, query, params)
+
                     if cursor.description is not None:
                         data = cursor.fetchall()
                         return [dict(row) for row in data]

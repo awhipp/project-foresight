@@ -79,6 +79,47 @@ def test_create_table():
         assert column["data_type"] == expected_columns[column["column_name"]]
 
 
+@pytest.mark.usefixtures("setup_forex_data")
+@pytest.mark.parametrize(
+    "timescale",
+    [
+        "S",
+        "M",
+        "H",
+        "D",
+    ],
+)
+def test_insert_and_fetch(timescale):
+    """Insert and fetch forex data."""
+
+    # ! TODO Better Test of Aggregate (across timescales)
+
+    # ARRANGE
+    dt_end = datetime.datetime.now()
+
+    # Create random data for the last 1000 seconds
+    data_array = []
+    for i in range(1000):
+        dt = dt_end - datetime.timedelta(seconds=i)
+        dt_end = dt
+        data_array.append(
+            ForexData(
+                instrument="EUR_USD",
+                time=dt,
+                bid=1.0 + i,
+                ask=2.0 + i,
+            ),
+        )
+
+    # ACT
+    ForexData.insert_multiple(data=data_array)
+
+    data = ForexData.fetch(timescale=timescale)
+
+    # ASSERT
+    assert len(data) == 1000
+
+
 def test_to_price_json():
     """Test the to_price_json method."""
 

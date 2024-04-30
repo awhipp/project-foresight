@@ -2,7 +2,6 @@
 
 from datetime import datetime
 
-import pandas as pd
 from pydantic import BaseModel
 
 from foresight.utils.database import TimeScaleService
@@ -11,7 +10,15 @@ from foresight.utils.logger import generate_logger
 
 logger = generate_logger(name=__name__)
 
-timeMap: dict = {"S": "second", "M": "minute", "H": "hour", "D": "day"}
+time_map: dict = {"S": "second", "M": "minute", "H": "hour", "D": "day"}
+
+# Generate the interval based on the timescale
+interval_map: dict = {
+    "S": "60 minute",
+    "M": "24 hour",
+    "H": "14 day",
+    "D": "120 day",
+}
 
 
 class ForexData(BaseModel):
@@ -69,6 +76,23 @@ class ForexData(BaseModel):
         )
 
     @staticmethod
+    def insert_multiple(data: list["ForexData"], table_name: str = "forex_data"):
+        """Insert list of multiple forex data efficiently."""
+        if len(data) > 0:
+            TimeScaleService().execute(
+                query=f"""INSERT INTO {table_name} (instrument, time, bid, ask) VALUES %s""",
+                params=[
+                    (
+                        row.instrument,
+                        row.time,
+                        row.bid,
+                        row.ask,
+                    )
+                    for row in data
+                ],
+            )
+
+    @staticmethod
     def drop_table(table_name: str = "forex_data"):
         """Drop a table in the data store.
 
@@ -84,6 +108,8 @@ class ForexData(BaseModel):
         """
         Fetch all data from the database and return a DataFrame.
 
+        The goal is to great the moving average at the timescale granularity.
+
         Parameters:
             instrument (str): The instrument to fetch
             timescale (str): The timescale to fetch (S = Second, M = Minute)
@@ -92,38 +118,19 @@ class ForexData(BaseModel):
             dict: The data from the database
         """
         try:
-            df = pd.DataFrame(
-                TimeScaleService().execute(
-                    query=f"""
-                        SELECT
-                        TO_CHAR(
-                            date_trunc(
-                                '{timeMap[timescale.lower()]}', time
-                            ),
-                            'YYYY-MM-DD HH24:MI:SS'
-                        ) as time,
-                        AVG(ask) as ask, AVG(bid) as bid
-                        FROM forex_data
-                        WHERE instrument = '{instrument}'
-                        AND time >= NOW() - INTERVAL '60 minute'
-                        GROUP BY time
-                        ORDER BY time ASC
-                    """,
-                ),
-            )
+            query = f"""SELECT
+                instrument,
+                time_bucket('{interval_map[timescale]}', time) as time,
+                AVG(bid) as bid,
+                AVG(ask) as ask
+            FROM forex_data
+            WHERE instrument = '{instrument}'
+            GROUP BY instrument, time
+            ORDER BY time ASC"""
+            results = TimeScaleService().execute(query=query)
 
-            df = (
-                df.groupby(df["time"]).agg({"ask": "mean", "bid": "mean"}).reset_index()
-            )
-            return [
-                ForexData(
-                    instrument=instrument,
-                    time=datetime.strptime(row["time"], "%Y-%m-%d %H:%M:%S"),
-                    bid=row["bid"],
-                    ask=row["ask"],
-                )
-                for _, row in df.iterrows()
-            ]
+            return [ForexData(**row) for row in results]
+
         except Exception as fetch_exception:  # pylint: disable=broad-except
             logger.error("Error fetching data: %s", fetch_exception)
 
