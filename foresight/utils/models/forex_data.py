@@ -10,14 +10,11 @@ from foresight.utils.logger import generate_logger
 
 logger = generate_logger(name=__name__)
 
-time_map: dict = {"S": "second", "M": "minute", "H": "hour", "D": "day"}
+# time_map: dict = {"S": "second"}
 
 # Generate the interval based on the timescale
 interval_map: dict = {
-    "S": "60 minute",
-    "M": "24 hour",
-    "H": "14 day",
-    "D": "120 day",
+    "S": "1 second",
 }
 
 
@@ -48,13 +45,13 @@ class ForexData(BaseModel):
         """
 
         # Execute SQL queries here
+        # ? Do we need a PK for INSTRUMENT and TIME?
         TimeScaleService().create_table(
             query=f"""CREATE TABLE IF NOT EXISTS {table_name} (
             instrument VARCHAR(10) NOT NULL,
             time TIMESTAMPTZ NOT NULL,
             bid FLOAT NOT NULL,
-            ask FLOAT NOT NULL,
-            PRIMARY KEY (instrument, time)
+            ask FLOAT NOT NULL
         )""",
             table_name=table_name,
             column_name="time",
@@ -62,7 +59,7 @@ class ForexData(BaseModel):
 
         return table_name
 
-    def insert_forex_data(self, table_name: str = "forex_data"):
+    def insert(self, table_name: str = "forex_data"):
         """Insert forex data into the database."""
         TimeScaleService().execute(
             query=f"""INSERT INTO {table_name} (instrument, time, bid, ask)
@@ -104,7 +101,7 @@ class ForexData(BaseModel):
         TimeScaleService().execute(query=f"DROP TABLE {table_name}")
 
     @staticmethod
-    def fetch(instrument: str = "EUR_USD", timescale: str = "M") -> list["ForexData"]:
+    def fetch(instrument: str = "EUR_USD", timescale: str = "S") -> list["ForexData"]:
         """
         Fetch all data from the database and return a DataFrame.
 
@@ -112,7 +109,7 @@ class ForexData(BaseModel):
 
         Parameters:
             instrument (str): The instrument to fetch
-            timescale (str): The timescale to fetch (S = Second, M = Minute)
+            timescale (str): The timescale to fetch (S = Second)
 
         Returns:
             dict: The data from the database
@@ -145,7 +142,7 @@ class ForexData(BaseModel):
         """
         json: dict = {
             "instrument": self.instrument,
-            "time": self.time,
+            "time": str(self.time),  # Needs to be string for JSON
         }
 
         if order_type == "ask":

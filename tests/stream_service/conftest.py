@@ -27,7 +27,7 @@ def insert_forex_data():
     )
 
     # ACT
-    data.insert_forex_data()
+    data.insert()
 
     # ASSERT
     records = TimeScaleService().execute(

@@ -58,7 +58,7 @@ def open_random_walk_stream(
             ask=round(initial_price + 0.0001, 5),
         )
 
-        record.insert_forex_data(table_name=table_name)
+        record.insert(table_name=table_name)
 
         logger.info(record)
 
@@ -83,7 +83,7 @@ def process_stream_data(line: str, table_name: str = "forex_data"):
         elif record.type == "PRICE" and record.tradeable:
 
             forex_data = record.to_forex_data()
-            forex_data.insert_forex_data(
+            forex_data.insert(
                 table_name=table_name,
             )
             logger.info(record)

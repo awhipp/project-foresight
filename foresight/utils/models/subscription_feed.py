@@ -1,6 +1,5 @@
 """Forex Data Model used in TimeScaleDB"""
 
-import List
 from pydantic import BaseModel
 
 from foresight.utils.database import TimeScaleService
@@ -10,7 +9,7 @@ from foresight.utils.logger import generate_logger
 logger = generate_logger(name=__name__)
 
 
-class SubscriptionFeeds(BaseModel):
+class SubscriptionFeed(BaseModel):
     """TimescaleDB model for subscription feeds.
 
     Args:
@@ -26,7 +25,7 @@ class SubscriptionFeeds(BaseModel):
     order_type: str
 
     @staticmethod
-    def create_table(table_name: str = "subscription_feeds") -> str:
+    def create_table(table_name: str = "subscription_feed") -> str:
         """Create a table in the data store if it does not exist.
 
         Args:
@@ -48,7 +47,7 @@ class SubscriptionFeeds(BaseModel):
         return table_name
 
     @staticmethod
-    def drop_table(table_name: str = "subscription_feeds"):
+    def drop_table(table_name: str = "subscription_feed"):
         """Drop a table in the data store.
 
         Args:
@@ -58,8 +57,21 @@ class SubscriptionFeeds(BaseModel):
         # Execute SQL queries here
         TimeScaleService().execute(query=f"DROP TABLE {table_name}")
 
+    def insert(self, table_name: str = "subscription_feed"):
+        """Insert subscription feed into the database."""
+        TimeScaleService().execute(
+            query=f"""INSERT INTO {table_name} (queue_url, instrument, timescale, order_type)
+            VALUES (%s, %s, %s, %s)""",
+            params=(
+                self.queue_url,
+                self.instrument,
+                self.timescale,
+                self.order_type,
+            ),
+        )
+
     @staticmethod
-    def fetch(table_name="subscription_feeds") -> List["SubscriptionFeeds"]:
+    def fetch(table_name="subscription_feed") -> list["SubscriptionFeed"]:
         """
         Fetch all data from the table and return a DataFrame.
 
@@ -70,10 +82,10 @@ class SubscriptionFeeds(BaseModel):
             dict: The data from the database
         """
         try:
-            active_feeds: List[dict] = TimeScaleService().execute(
+            active_feeds: list[dict] = TimeScaleService().execute(
                 query=f"SELECT queue_url, instrument, timescale, order_type FROM {table_name}",
             )
 
-            return [SubscriptionFeeds(**feed) for feed in active_feeds]
+            return [SubscriptionFeed(**feed) for feed in active_feeds]
         except Exception as fetch_exception:  # pylint: disable=broad-except
             logger.error("Error fetching data: %s", fetch_exception)

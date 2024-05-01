@@ -79,29 +79,20 @@ def test_create_table():
         assert column["data_type"] == expected_columns[column["column_name"]]
 
 
-@pytest.mark.usefixtures("setup_forex_data")
-@pytest.mark.parametrize(
-    "timescale",
-    [
-        "S",
-        "M",
-        "H",
-        "D",
-    ],
-)
-def test_insert_and_fetch(timescale):
+@pytest.mark.usefixtures("setup_forex_data_table")
+def test_insert_and_fetch():
     """Insert and fetch forex data."""
-
-    # ! TODO Better Test of Aggregate (across timescales)
+    RECORD_COUNT = 1000
 
     # ARRANGE
-    dt_end = datetime.datetime.now()
+    dt = datetime.datetime.now()
+    # Zero out the seconds and microseconds
+    dt = dt.replace(second=0, microsecond=0)
+    dt = dt - datetime.timedelta(seconds=RECORD_COUNT)
 
     # Create random data for the last 1000 seconds
     data_array = []
-    for i in range(1000):
-        dt = dt_end - datetime.timedelta(seconds=i)
-        dt_end = dt
+    for i in range(RECORD_COUNT):
         data_array.append(
             ForexData(
                 instrument="EUR_USD",
@@ -110,14 +101,26 @@ def test_insert_and_fetch(timescale):
                 ask=2.0 + i,
             ),
         )
+        dt = dt + datetime.timedelta(seconds=1)
+
+    # Double the array to test the insert_multiple and the time_bucket
+    data_array = data_array + data_array
 
     # ACT
     ForexData.insert_multiple(data=data_array)
 
-    data = ForexData.fetch(timescale=timescale)
+    data = ForexData.fetch()
 
     # ASSERT
     assert len(data) == 1000
+
+    # Ensure that the data is in ascending order of time
+    # Ensure that the bid and ask are in ascending order
+
+    for i in range(1, len(data)):
+        assert data[i].time > data[i - 1].time
+        assert data[i].bid > data[i - 1].bid
+        assert data[i].ask > data[i - 1].ask
 
 
 def test_to_price_json():
@@ -130,6 +133,8 @@ def test_to_price_json():
         bid=1.0,
         ask=2.0,
     )
+
+    dt = str(dt)
 
     json_data = forex_data.to_price_json(order_type="bid")
     assert json_data == {
