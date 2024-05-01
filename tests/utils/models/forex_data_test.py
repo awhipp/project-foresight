@@ -22,23 +22,51 @@ def test_valid_forex_data():
     assert forex_data.bid == 1.0
     assert forex_data.ask == 1.0001
 
+    forex_data = ForexData(instrument="EUR_USD", time="2021-01-01T00:00:00", price=1.0)
+    assert forex_data.instrument == "EUR_USD"
+    assert forex_data.time == datetime.datetime(2021, 1, 1, 0, 0)
+    assert forex_data.price == 1.0
 
-def test_invalid_forex_data():
-    """Test invalid forex data. All 4 fields are required."""
 
-    valid_definition = {
-        "instrument": "EUR_USD",
-        "time": "2021-01-01T00:00:00",
-        "bid": 1.0,
-        "ask": 1.0001,
-    }
+@pytest.mark.parametrize(
+    "invalid_options",
+    [
+        {
+            "instrument": "EUR_USD",
+            "time": "2021-01-01T00:00:00",
+        },
+        {
+            "instrument": "EUR_USD",
+            "time": "2021-01-01T00:00:00",
+            "bid": 1.0,
+            "ask": 1.0001,
+            "price": 1.0001,
+        },
+        {
+            "instrument": "EUR_USD",
+            "time": "2021-01-01T00:00:00",
+            "ask": 1.0001,
+        },
+        {
+            "instrument": "EUR_USD",
+            "time": "2021-01-01T00:00:00",
+            "bid": 1.0,
+        },
+        {
+            "instrument": "EUR_USD",
+            "price": 1.0001,
+        },
+        {
+            "time": "2021-01-01T00:00:00",
+            "price": 1.0001,
+        },
+    ],
+)
+def test_invalid_forex_data(invalid_options):
+    """Test invalid forex data."""
 
-    # Loop through all fields and remove one at a time
-    for key in valid_definition.keys():
-        invalid_definition = valid_definition.copy()
-        invalid_definition.pop(key)
-        with pytest.raises(ValueError):
-            ForexData(**invalid_definition)
+    with pytest.raises(ValueError):
+        ForexData(**invalid_options)
 
 
 def test_create_table():
@@ -123,8 +151,8 @@ def test_insert_and_fetch():
         assert data[i].ask > data[i - 1].ask
 
 
-def test_to_price_json():
-    """Test the to_price_json method."""
+def test_convert_to_price():
+    """Test the convert_to_price method."""
 
     dt = datetime.datetime(2021, 1, 1, 0, 0)
     forex_data = ForexData(
@@ -136,26 +164,14 @@ def test_to_price_json():
 
     dt = str(dt)
 
-    json_data = forex_data.to_price_json(order_type="bid")
-    assert json_data == {
-        "instrument": "EUR_USD",
-        "time": dt,
-        "price": 1.0,
-    }
+    data = forex_data.convert_to_price(order_type="bid")
+    assert data.price == 1.0
 
-    json_data = forex_data.to_price_json(order_type="ask")
-    assert json_data == {
-        "instrument": "EUR_USD",
-        "time": dt,
-        "price": 2.0,
-    }
+    data = forex_data.convert_to_price(order_type="ask")
+    assert data.price == 2.0
 
-    json_data = forex_data.to_price_json(order_type="mid")
-    assert json_data == {
-        "instrument": "EUR_USD",
-        "time": dt,
-        "price": 1.5,
-    }
+    data = forex_data.convert_to_price(order_type="mid")
+    assert data.price == 1.5
 
     with pytest.raises(ValueError):
-        forex_data.to_price_json(order_type="invalid")
+        forex_data.convert_to_price(order_type="invalid")

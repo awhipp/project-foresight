@@ -1,13 +1,12 @@
 """Test for the window service."""
 
-import json
 import uuid
-from datetime import datetime
 
 import pytest
 from boto3_type_annotations.sqs import Client
 
 from foresight.utils.aws import get_client
+from foresight.utils.models.forex_data import ForexData
 from foresight.utils.models.subscription_feed import SubscriptionFeed
 from foresight.window_service.app import send_data_to_queues
 
@@ -23,7 +22,7 @@ def setup_temporary_queue():
 
 
 @pytest.fixture()
-def setup_subscription_feed(setup_temporary_queue, setup_subscription_feed_table):
+def setup_subscription_feed(setup_subscription_feed_table, setup_temporary_queue):
     """Setup a subscription feed."""
     queue_url = setup_temporary_queue
 
@@ -34,36 +33,42 @@ def setup_subscription_feed(setup_temporary_queue, setup_subscription_feed_table
         order_type="bid",
     )
 
-    subscription_feed.insert()
+    subscription_feed.insert(table_name=setup_subscription_feed_table)
 
     yield subscription_feed
 
 
-@pytest.mark.usefixtures("add_sample_forex_data")
-def test_send_data_to_queues(setup_subscription_feed):
+def test_send_data_to_queues(setup_subscription_feed, add_sample_forex_data):
     """Test sending data to queues."""
 
     # ARRANGE
     feed: SubscriptionFeed = setup_subscription_feed
 
     # ACT
-    send_data_to_queues()
+    messages_sent: int = send_data_to_queues()
 
     # ASSERT
-    # Pull message from queue and check if it is the same as the data
+    assert messages_sent == len(add_sample_forex_data)
 
+    # Pull message from queue and check if it is the same as the data
     sqsClient: Client = get_client("sqs")
     messages = sqsClient.receive_message(
         QueueUrl=feed.queue_url,
-        MaxNumberOfMessages=1,
+        MaxNumberOfMessages=messages_sent + 1,  # Get one extra message (if any)
     )
     messages = messages["Messages"]
-    assert len(messages) == 1
+    assert len(messages) == messages_sent
 
-    message = json.loads(messages[0]["Body"])
+    messages = ForexData.model_validate_sqs_messages(messages)
 
-    # ? Should there be a price object
-    assert message["price"] == 1.2
-    assert message["instrument"] == "EUR_USD"
-    # Validate time is a valid datetime string
-    assert datetime.fromisoformat(message["time"])
+    expected_forex = [
+        data.convert_to_price(order_type="bid") for data in add_sample_forex_data
+    ]
+
+    for message in messages:
+        found_message = False
+        for expected in expected_forex:
+            if message == expected:
+                found_message = True
+                break
+        assert found_message

@@ -1,8 +1,11 @@
 """Forex Data Model used in TimeScaleDB"""
 
+import json
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel
+from pydantic import root_validator
 
 from foresight.utils.database import TimeScaleService
 from foresight.utils.logger import generate_logger
@@ -30,8 +33,38 @@ class ForexData(BaseModel):
 
     instrument: str
     time: datetime
-    bid: float
-    ask: float
+    bid: Optional[float] = None
+    ask: Optional[float] = None
+    price: Optional[float] = None
+
+    @root_validator(skip_on_failure=True)
+    def check_bid_ask_or_price(cls, values):  # pylint: disable=no-self-argument
+        """Validates that either bid and ask are defined, or price is defined.
+
+        Args:
+            values (dict): The values to validate.
+        """
+        bid = values.get("bid")
+        ask = values.get("ask")
+        price = values.get("price")
+
+        # Check if bid and ask are both defined
+        bid_and_ask_defined = bid is not None and ask is not None
+
+        # Check if price is defined
+        price_defined = price is not None
+
+        # Either bid and ask should both be defined, or price should be defined
+        if not bid_and_ask_defined and not price_defined:
+            raise ValueError(
+                "Either 'bid' and 'ask' must both be defined, or 'price' must be defined.",
+            )
+        if bid_and_ask_defined and price_defined:
+            raise ValueError(
+                "Either 'bid' and 'ask' must both be defined, or 'price' must be defined.",
+            )
+
+        return values
 
     @staticmethod
     def create_table(table_name: str = "forex_data") -> str:
@@ -131,27 +164,32 @@ class ForexData(BaseModel):
         except Exception as fetch_exception:  # pylint: disable=broad-except
             logger.error("Error fetching data: %s", fetch_exception)
 
-    def to_price_json(self, order_type: str = "ask") -> dict:
-        """Convert the data to JSON format.
+    def convert_to_price(self, order_type: str = "ask") -> "ForexData":
+        """Convert the data to desired price format format.
 
         Args:
-            order_type (str): The type of order to convert to JSON.
+            order_type (str): The type of order to convert to.
 
         Returns:
-            dict: The data in JSON format.
+            forex_data (ForexData): The data with price defined.
         """
-        json: dict = {
-            "instrument": self.instrument,
-            "time": str(self.time),  # Needs to be string for JSON
-        }
-
         if order_type == "ask":
-            json["price"] = self.ask
+            price = self.ask
         elif order_type == "bid":
-            json["price"] = self.bid
+            price = self.bid
         elif order_type == "mid":
-            json["price"] = round((self.bid + self.ask) / 2.0, 5)
+            price = (self.bid + self.ask) / 2
         else:
-            raise ValueError("Invalid order type")
+            raise ValueError("Invalid order type. Must be 'ask', 'bid', or 'mid'.")
 
-        return json
+        return ForexData(
+            instrument=self.instrument,
+            time=self.time,
+            price=price,
+        )
+
+    @staticmethod
+    def model_validate_sqs_messages(messages: list[dict]) -> list["ForexData"]:
+        """Validate a list from an SQS message of data points."""
+        messages = [json.loads(message["Body"]) for message in messages]
+        return [ForexData(**row) for row in messages]

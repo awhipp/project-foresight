@@ -21,6 +21,7 @@ def get_client(service_type: str):
         return boto3.client(
             service_type,
             endpoint_url=endpoint_url,
+            region_name="us-east-1",
         )
 
 
@@ -40,4 +41,5 @@ def get_resource(service_type: str):
         return boto3.resource(
             service_type,
             endpoint_url=endpoint_url,
+            region_name="us-east-1",
         )
