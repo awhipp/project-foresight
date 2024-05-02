@@ -57,7 +57,7 @@ class SubscriptionFeed(BaseModel):
         # Execute SQL queries here
         TimeScaleService().execute(query=f"DROP TABLE {table_name}")
 
-    def insertOrUpdate(self, table_name: str = "subscription_feed"):
+    def insert_or_update(self, table_name: str = "subscription_feed"):
         """
         Insert or replaces a feed record in the database.
 

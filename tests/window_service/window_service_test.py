@@ -33,7 +33,7 @@ def setup_subscription_feed(setup_subscription_feed_table, setup_temporary_queue
         order_type="bid",
     )
 
-    subscription_feed.insertOrUpdate(table_name=setup_subscription_feed_table)
+    subscription_feed.insert_or_update(table_name=setup_subscription_feed_table)
 
     yield subscription_feed
 
