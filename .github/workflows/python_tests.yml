@@ -35,6 +35,7 @@ jobs:
 
     - name: Run tests
       env:
+        # These are largely development default values
         OANDA_ACCOUNT_ID: ${{secrets.OANDA_ACCOUNT_ID}}
         OANDA_TOKEN: ${{secrets.OANDA_TOKEN}}
         APP_RANDOM_WALK: "True"
@@ -44,6 +45,9 @@ jobs:
         TIMESCALE_USER: postgres
         TIMESCALE_PASSWORD: postgres
         AWS_ENDPOINT_URL: http://localhost:4566
+        AWS_ACCESS_KEY_ID: test
+        AWS_SECRET_ACCESS_KEY: test
+        AWS_REGION: us-east-1
       run: python -m poetry run python -m pytest --disable-warnings -xv --cov=. --cov-report=xml
 
     - name: Pytest coverage comment
