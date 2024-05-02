@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel
-from pydantic import root_validator
+from pydantic import model_validator
 
 from foresight.utils.database import TimeScaleService
 from foresight.utils.logger import generate_logger
@@ -37,7 +37,7 @@ class ForexData(BaseModel):
     ask: Optional[float] = None
     price: Optional[float] = None
 
-    @root_validator(skip_on_failure=True)
+    @model_validator(mode="before")
     def check_bid_ask_or_price(cls, values):  # pylint: disable=no-self-argument
         """Validates that either bid and ask are defined, or price is defined.
 
