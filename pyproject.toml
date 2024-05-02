@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "foresight"
-version = "0.5.0"
+version = "0.6.0"
 description = "Continuous integration of market data, analysis, and presentation."
 authors = ["awhipp"]
 readme = "README.md"
