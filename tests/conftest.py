@@ -6,7 +6,9 @@ from datetime import timedelta
 from datetime import timezone
 
 import pytest
+from boto3_type_annotations.sqs import Client
 
+from foresight.utils.aws import get_client
 from foresight.utils.models.forex_data import ForexData
 from foresight.utils.models.subscription_feed import SubscriptionFeed
 
@@ -51,3 +53,15 @@ def setup_subscription_feed_table():
     table_name = SubscriptionFeed.create_table()
     yield table_name
     SubscriptionFeed.drop_table(table_name=table_name)
+
+
+# Pytest fixture that deletes all queues after all tests are run
+@pytest.fixture(autouse=True)
+def delete_all_queues():
+    """Delete all queues after all tests are run."""
+    yield
+    sqs_client: Client = get_client("sqs")
+    queues = sqs_client.list_queues()
+    if "QueueUrls" in queues:
+        for queue in queues["QueueUrls"]:
+            sqs_client.delete_queue(QueueUrl=queue)

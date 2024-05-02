@@ -90,7 +90,10 @@ python interface_service/app.py
 ### Run Tests
 
 ```bash
+# Run Pytest (without coverage output)
 python -m pytest --disable-warnings -xv
+# Run Pytest (with coverage output)
+pytest --disable-warnings -xv --cov=. --cov-report=xml
 ```
 
 ## End State Architecture

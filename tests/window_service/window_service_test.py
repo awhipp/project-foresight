@@ -14,11 +14,11 @@ from foresight.window_service.app import send_data_to_queues
 @pytest.fixture()
 def setup_temporary_queue():
     """Setup a temporary queue with a random name."""
-    sqsClient: Client = get_client("sqs")
+    sqs_client: Client = get_client("sqs")
     queue_name = f"test-queue-{uuid.uuid4()}"
-    queue_url = sqsClient.create_queue(QueueName=queue_name)["QueueUrl"]
+    queue_url = sqs_client.create_queue(QueueName=queue_name)["QueueUrl"]
     yield queue_url
-    sqsClient.delete_queue(QueueUrl=queue_url)
+    sqs_client.delete_queue(QueueUrl=queue_url)
 
 
 @pytest.fixture()
@@ -33,7 +33,7 @@ def setup_subscription_feed(setup_subscription_feed_table, setup_temporary_queue
         order_type="bid",
     )
 
-    subscription_feed.insert(table_name=setup_subscription_feed_table)
+    subscription_feed.insert_or_update(table_name=setup_subscription_feed_table)
 
     yield subscription_feed
 
@@ -51,8 +51,8 @@ def test_send_data_to_queues(setup_subscription_feed, add_sample_forex_data):
     assert messages_sent == len(add_sample_forex_data)
 
     # Pull message from queue and check if it is the same as the data
-    sqsClient: Client = get_client("sqs")
-    messages = sqsClient.receive_message(
+    sqs_client: Client = get_client("sqs")
+    messages = sqs_client.receive_message(
         QueueUrl=feed.queue_url,
         MaxNumberOfMessages=messages_sent + 1,  # Get one extra message (if any)
     )

@@ -77,8 +77,8 @@ def test_create_table():
 
 
 @pytest.mark.usefixtures("setup_subscription_feed_table")
-def test_insert_and_fetch():
-    """Insert and fetch subscription feed."""
+def test_insert_or_update_and_fetch():
+    """Testing `insert_or_update` and `fetch` subscription feed."""
 
     # ARRANGE
     feed = SubscriptionFeed(
@@ -89,11 +89,28 @@ def test_insert_and_fetch():
     )
 
     # ACT
-    feed.insert()
+    feed.insert_or_update()
 
     data = SubscriptionFeed.fetch()
 
     # ASSERT
+    assert len(data) == 1
+    assert data[0].queue_url == feed.queue_url
+    assert data[0].instrument == feed.instrument
+    assert data[0].timescale == feed.timescale
+    assert data[0].order_type == feed.order_type
+
+    # ARRANGE AGAIN
+    feed.instrument = "GBP_USD"
+    feed.timescale = "M"
+    feed.order_type = "ask"
+
+    # ACT AGAIN
+    feed.insert_or_update()
+
+    data = SubscriptionFeed.fetch()
+
+    # ASSERT AGAIN
     assert len(data) == 1
     assert data[0].queue_url == feed.queue_url
     assert data[0].instrument == feed.instrument
