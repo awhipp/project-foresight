@@ -24,7 +24,6 @@ def get_client(service_type: str):
             aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
             region_name=os.getenv("AWS_REGION_NAME"),
             endpoint_url=endpoint_url,
-            region_name="us-east-1",
         )
 
 
@@ -47,5 +46,4 @@ def get_resource(service_type: str):
             aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
             region_name=os.getenv("AWS_REGION_NAME"),
             endpoint_url=endpoint_url,
-            region_name="us-east-1",
         )
