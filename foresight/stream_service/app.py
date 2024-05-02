@@ -12,10 +12,9 @@ from typing import Union
 import dotenv
 import requests
 
-from foresight.models.forex_data import ForexData
-from foresight.models.stream import Stream
-from foresight.utils.database import TimeScaleService
+from foresight.stream_service.models.stream import Stream
 from foresight.utils.logger import generate_logger
+from foresight.utils.models.forex_data import ForexData
 
 
 logger = generate_logger(__name__)
@@ -59,7 +58,7 @@ def open_random_walk_stream(
             ask=round(initial_price + 0.0001, 5),
         )
 
-        TimeScaleService().insert_forex_data(record, table_name=table_name)
+        record.insert(table_name=table_name)
 
         logger.info(record)
 
@@ -83,8 +82,8 @@ def process_stream_data(line: str, table_name: str = "forex_data"):
             logger.error(record.errorMessage)
         elif record.type == "PRICE" and record.tradeable:
 
-            TimeScaleService().insert_forex_data(
-                record.to_forex_data(),
+            forex_data = record.to_forex_data()
+            forex_data.insert(
                 table_name=table_name,
             )
             logger.info(record)
@@ -135,28 +134,9 @@ def open_stream():
     execute_stream()
 
 
-def create_table(table_name: str = "forex_data") -> str:
-    """Create a table in the data store."""
-
-    # Execute SQL queries here
-    TimeScaleService().create_table(
-        query=f"""CREATE TABLE IF NOT EXISTS {table_name} (
-        instrument VARCHAR(10) NOT NULL,
-        time TIMESTAMPTZ NOT NULL,
-        bid FLOAT NOT NULL,
-        ask FLOAT NOT NULL,
-        PRIMARY KEY (instrument, time)
-    )""",
-        table_name=table_name,
-        column_name="time",
-    )
-
-    return table_name
-
-
 if __name__ == "__main__":
-    # Execute SQL queries here
-    create_table()
+    # Create the table in the data store if it does not exist.
+    ForexData.create_table()
 
     # Open a stream to the OANDA API and send the data to the data store.
     while True:

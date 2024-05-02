@@ -1,24 +1,19 @@
 """Provides a singleton class to interact with the TimescaleDB database."""
 
-import logging
 import os
+from typing import Union
 
 import dotenv
 import psycopg2
 import psycopg2.extras
 
-from foresight.models.forex_data import ForexData
+from foresight.utils.logger import generate_logger
 
 
 dotenv.load_dotenv(".env")
 
 
-logging.basicConfig(
-    format="%(asctime)s %(levelname)-8s %(message)s",
-    level=logging.INFO,
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
+logger = generate_logger(name=__name__)
 
 
 class TimeScaleService:
@@ -73,17 +68,23 @@ class TimeScaleService:
                         except psycopg2.DatabaseError:
                             logger.info("Already created the hyper table. Skipping.")
             except Exception as table_create_exception:
-                raise Exception(f"Failed to create table: {table_create_exception}")
+                raise ValueError(
+                    f"Failed to create table: {table_create_exception}",
+                ) from table_create_exception
 
         else:
             raise Exception("Database connection not established.")
 
-    def execute(self, query, params=None):
+    def execute(self, query, params: Union[tuple, list] = None):
         """Execute a query on the database."""
         if self.connection is not None:
             try:
                 with self.connection.cursor() as cursor:
-                    cursor.execute(query, params)
+                    if params is None or isinstance(params, tuple):
+                        cursor.execute(query, params)
+                    elif isinstance(params, list):
+                        psycopg2.extras.execute_values(cursor, query, params)
+
                     if cursor.description is not None:
                         data = cursor.fetchall()
                         return [dict(row) for row in data]
@@ -97,19 +98,6 @@ class TimeScaleService:
         if self.connection is not None:
             self.connection.close()
             self.connection = None
-
-    def insert_forex_data(self, forex_data: ForexData, table_name: str = "forex_data"):
-        """Insert forex data into the database."""
-        self.execute(
-            query=f"""INSERT INTO {table_name} (instrument, time, bid, ask)
-            VALUES (%s, %s, %s, %s)""",
-            params=(
-                forex_data.instrument,
-                forex_data.time,
-                forex_data.bid,
-                forex_data.ask,
-            ),
-        )
 
 
 # Example usage:

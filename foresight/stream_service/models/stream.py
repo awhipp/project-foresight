@@ -7,8 +7,8 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from foresight.models.forex_data import ForexData
-from foresight.models.pricing import Pricing
+from foresight.stream_service.models.pricing import Pricing
+from foresight.utils.models.forex_data import ForexData
 
 
 class Stream(BaseModel):

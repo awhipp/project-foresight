@@ -1,7 +1,6 @@
 # app.py
 
 import json
-import logging
 import os
 
 import dotenv
@@ -10,6 +9,7 @@ from flask import jsonify
 from flask import render_template
 
 from foresight.utils.database import TimeScaleService
+from foresight.utils.logger import generate_logger
 
 
 app = Flask(__name__)
@@ -17,13 +17,7 @@ app = Flask(__name__)
 # Load environment variables
 dotenv.load_dotenv()
 
-# Setup logging and log timestamp prepend
-logging.basicConfig(
-    format="%(asctime)s %(levelname)-8s %(message)s",
-    level=logging.INFO,
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
+logger = generate_logger(name=__name__)
 
 
 def get_latest() -> list[dict]:

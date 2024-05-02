@@ -2,9 +2,6 @@
 
 import datetime
 import json
-
-# Setup logging and log timestamp prepend
-import logging
 import time
 
 import pandas as pd
@@ -12,13 +9,10 @@ from boto3_type_annotations.sqs import Client
 from utils.aws import get_client
 from utils.database import TimeScaleService
 
+from foresight.utils.logger import generate_logger
 
-logging.basicConfig(
-    format="%(asctime)s %(levelname)-8s %(message)s",
-    level=logging.INFO,
-    datefmt="%Y-%m-%d %H:%M:%S",
-)
-logger = logging.getLogger(__name__)
+
+logger = generate_logger(name=__name__)
 
 
 class Indicator:
@@ -58,11 +52,11 @@ class Indicator:
     def add_subscription_record(self, instrument: str, timescale: str, order_type: str):
         """Add a subscription record."""
         TimeScaleService().execute(
-            f"DELETE FROM subscription_feeds WHERE queue_url = '{self.queue_url}'",
+            f"DELETE FROM subscription_feed WHERE queue_url = '{self.queue_url}'",
         )
         TimeScaleService().execute(
             query=f"""
-                INSERT INTO subscription_feeds (queue_url, instrument, timescale, order_type)
+                INSERT INTO subscription_feed (queue_url, instrument, timescale, order_type)
                 VALUES ('{self.queue_url}', '{instrument}', '{timescale}', '{order_type}')
             """,
         )
