@@ -89,11 +89,28 @@ def test_insert_and_fetch():
     )
 
     # ACT
-    feed.insert()
+    feed.insertOrUpdate()
 
     data = SubscriptionFeed.fetch()
 
     # ASSERT
+    assert len(data) == 1
+    assert data[0].queue_url == feed.queue_url
+    assert data[0].instrument == feed.instrument
+    assert data[0].timescale == feed.timescale
+    assert data[0].order_type == feed.order_type
+
+    # ARRANGE AGAIN
+    feed.instrument = "GBP_USD"
+    feed.timescale = "M"
+    feed.order_type = "ask"
+
+    # ACT AGAIN
+    feed.insertOrUpdate()
+
+    data = SubscriptionFeed.fetch()
+
+    # ASSERT AGAIN
     assert len(data) == 1
     assert data[0].queue_url == feed.queue_url
     assert data[0].instrument == feed.instrument

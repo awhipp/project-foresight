@@ -12,7 +12,7 @@ from foresight.utils.models.subscription_feed import SubscriptionFeed
 
 logger = generate_logger(name=__name__)
 
-sqsClient: Client = get_client("sqs")
+sqs_client: Client = get_client("sqs")
 
 
 def setup():
@@ -60,7 +60,7 @@ def send_data_to_queues() -> int:
                     subscription.queue_url,
                 )
                 for data_point in forex_data:
-                    sqsClient.send_message(
+                    sqs_client.send_message(
                         QueueUrl=subscription.queue_url,
                         MessageBody=data_point,
                     )

@@ -41,7 +41,7 @@ class SubscriptionFeed(BaseModel):
                 instrument VARCHAR(10) NOT NULL,
                 timescale VARCHAR(10) NOT NULL,
                 order_type VARCHAR(10) NOT NULL,
-                PRIMARY KEY (queue_url, instrument, timescale)
+                PRIMARY KEY (queue_url)
             )""",
         )
         return table_name
@@ -57,17 +57,25 @@ class SubscriptionFeed(BaseModel):
         # Execute SQL queries here
         TimeScaleService().execute(query=f"DROP TABLE {table_name}")
 
-    def insert(self, table_name: str = "subscription_feed"):
-        """Insert subscription feed into the database."""
+    def insertOrUpdate(self, table_name: str = "subscription_feed"):
+        """
+        Insert or replaces a feed record in the database.
+
+        Args:
+            table_name (str): The name of the table to insert data into.
+
+        """
         TimeScaleService().execute(
-            query=f"""INSERT INTO {table_name} (queue_url, instrument, timescale, order_type)
-            VALUES (%s, %s, %s, %s)""",
-            params=(
-                self.queue_url,
-                self.instrument,
-                self.timescale,
-                self.order_type,
-            ),
+            query=f"""
+                INSERT INTO {table_name} (queue_url, instrument, timescale, order_type)
+                VALUES (
+                    '{self.queue_url}', '{self.instrument}', '{self.timescale}', '{self.order_type}'
+                )
+                ON CONFLICT (queue_url) DO UPDATE
+                SET instrument = EXCLUDED.instrument,
+                    timescale = EXCLUDED.timescale,
+                    order_type = EXCLUDED.order_type
+            """,
         )
 
     @staticmethod
