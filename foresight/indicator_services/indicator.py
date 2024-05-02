@@ -35,7 +35,7 @@ class Indicator:
         order_type: str = "mid",
     ):
         """Initialize the Indicator Class"""
-        if isinstance(self, Indicator):
+        if self.__class__ is Indicator:
             raise AbstractClassError("<Indicator> must be subclassed.")
 
         # Instantiate variables
@@ -43,15 +43,22 @@ class Indicator:
         self.order_type = order_type
         self.instrument = instrument
         self.timescale = timescale
+        self.queue_url = self.create_queue()
 
-        # Create Queue
+        # Create subscription feed
+        self.create_subscription_feed()
+
+    def create_queue(self) -> str:
+        """Create a queue for the indicator."""
         sqs_client: Client = get_client("sqs")
         queue_name = f"{self.component_name}_{self.instrument}_indicator_queue"
         response = sqs_client.create_queue(QueueName=queue_name)
 
         logger.info(f"Created queue: {queue_name}")
-        self.queue_url = response["QueueUrl"]
+        return response["QueueUrl"]
 
+    def create_subscription_feed(self):
+        """Create a subscription feed for the indicator."""
         # Add subscription to feed for window service
         SubscriptionFeed(
             queue_url=self.queue_url,
